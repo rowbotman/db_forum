@@ -1,5 +1,5 @@
 FROM golang:1.12-stretch AS lang
-WORKDIR /home/db-forums
+WORKDIR /home/db_forum
 COPY . .
 RUN go get -d && go build -v
 
@@ -13,18 +13,11 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y git
 
-## Клонируем проект
 USER root
-##RUN git clone https://github.com/rowbotman/db-forums.git
-#WORKDIR /home/db-forums
-#COPY . .
-#RUN go get -d && go build -v
-#RUN cd /home/db-forums
-WORKDIR /home/db-forums
-RUN cd /home/db-forums
+WORKDIR /home/db_forum
+RUN cd /home/db_forum
 COPY . .
 
-# Устанавливаем PostgreSQL
 RUN apt-get -y update
 RUN apt-get -y install apt-transport-https git wget
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' >> /etc/apt/sources.list.d/pgdg.list
@@ -75,7 +68,7 @@ VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 EXPOSE 5432
 EXPOSE 5000
 
-WORKDIR /home/db-forums
-COPY --from=lang /home/db-forums .
+WORKDIR /home/db_forum
+COPY --from=lang /home/db_forum .
 
-CMD service postgresql start && ./db-forums
+CMD service postgresql start && ./db_forum
