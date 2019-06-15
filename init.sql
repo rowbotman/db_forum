@@ -12,6 +12,21 @@ DROP INDEX IF EXISTS forum_id_idx;
 DROP INDEX IF EXISTS thread_id_idx;
 DROP INDEX IF EXISTS post_id_idx;
 DROP INDEX IF EXISTS post_forumid_idx;
+DROP INDEX IF EXISTS forum_authorid_idx;
+DROP INDEX IF EXISTS profile_lownick_idx;
+DROP INDEX IF EXISTS profile_id_idx;
+DROP INDEX IF EXISTS thread_slug_idx;
+DROP INDEX IF EXISTS post_parentid_uid_idx;
+DROP INDEX IF EXISTS post_userid_idx;
+DROP INDEX IF EXISTS post_many_idx;
+DROP INDEX IF EXISTS post_uid_withpath_idx;
+
+--
+DROP INDEX IF EXISTS post_parentid_idx;
+DROP INDEX IF EXISTS post_threadpath_idx;
+DROP INDEX IF EXISTS post_threadid_idx;
+DROP INDEX IF EXISTS post_pathcreated_idx;
+DROP INDEX IF EXISTS post_idincl_idx;
 
 TRUNCATE TABLE profile, forum, thread, vote, post, forum_meta CASCADE;
 DROP TABLE     IF EXISTS vote             CASCADE;
@@ -244,7 +259,7 @@ CREATE INDEX IF NOT EXISTS post_parentid_uid_idx ON post(parent_id, uid);
 CREATE INDEX IF NOT EXISTS post_userid_idx       ON post(user_id);
 -- CREATE INDEX IF NOT EXISTS post_threadid_idx     ON post(thread_id);
 CREATE INDEX IF NOT EXISTS post_id_idx           ON post(uid);
-CREATE INDEX IF NOT EXISTS post_pathcreated_idx  ON post(path, created);
+-- CREATE INDEX IF NOT EXISTS post_pathcreated_idx  ON post(path, created);
 CREATE INDEX IF NOT EXISTS post_many_idx         ON post(thread_id, parent_id, uid);
 CREATE INDEX IF NOT EXISTS post_uid_withpath_idx ON post(uid) INCLUDE (path);
 CREATE INDEX IF NOT EXISTS post_path_idx         ON post(path);
