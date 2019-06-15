@@ -19,7 +19,8 @@ func ServiceGet() (models.ServiceInfo, error) {
 	if err := row.Scan(&info.Thread); err != nil {
 		return models.ServiceInfo{}, err
 	}
-	sqlStatement = `SELECT COUNT(*) FROM post`
+	// todo: check it
+	sqlStatement = `SELECT SUM(post_count) FROM forum_meta`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Post); err != nil {
 		return models.ServiceInfo{}, err

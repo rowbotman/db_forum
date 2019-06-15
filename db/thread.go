@@ -246,13 +246,13 @@ func SelectThreadPosts(slugOrid string, limit int32, since int64,
        p.message, p.is_edited,
        p.thread_id, p.created FROM post p `
 	/*
-	SELECT p.uid, p.path, p.parent_id, p.author, p.is_edited,
-	       p.thread_id, p.created FROM post p WHERE p.thread_id = 376
-			AND p.path[1] IN (
-				SELECT p.uid FROM post p WHERE array_length(p.path, 1) = 1
-					AND p.thread_id = 376
-					AND p.uid < (SELECT path[1] FROM post WHERE uid = 2974) ORDER BY p.path[1] LIMIT 3
-			) ORDER BY p.path[1] DESC, p.path;
+		SELECT p.uid, p.path, p.parent_id, p.author, p.is_edited,
+			   p.thread_id, p.created FROM post p WHERE p.thread_id = 376
+				AND p.path[1] IN (
+					SELECT p.uid FROM post p WHERE array_length(p.path, 1) = 1
+						AND p.thread_id = 376
+						AND p.uid < (SELECT path[1] FROM post WHERE uid = 2974) ORDER BY p.path[1] LIMIT 3
+				) ORDER BY p.path[1] DESC, p.path;
 	 */
 	var rows *pgx.Rows
 	switch sort {

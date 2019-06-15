@@ -1,2 +1,9 @@
 db_forum
 README.md
+.idea
+*.log
+db_forum
+*.txt
+*.swo
+*.swp
+*.plan

@@ -54,7 +54,7 @@ func InsertIntoUser(userData models.User) (models.Users, error) {
 }
 
 func SelectUser(nickname string) (models.User, error) {
-	sqlStatement := `SELECT uid, full_name, nickname, email, about FROM profile WHERE nickname = $1`
+	sqlStatement := `SELECT uid, full_name, nickname, email, about FROM profile WHERE nickname = $1;`
 	row := DB.QueryRow(sqlStatement, nickname)
 	newUser := models.User{}
 	err := row.Scan(

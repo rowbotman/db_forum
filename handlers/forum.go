@@ -6,12 +6,13 @@ import (
 	"github.com/naoina/denco"
 	"github.com/rowbotman/db_forum/db"
 	"github.com/rowbotman/db_forum/models"
+	"log"
 	"net/http"
 	"strconv"
 )
 
 func forumCreate(w http.ResponseWriter, req *http.Request, _ denco.Params) {
-	//log.Println("forum create", req.RequestURI)
+	log.Println("forum create", req.RequestURI)
 	var data models.DataForNewForum
 	_ = json.UnmarshalFromReader(req.Body, &data)
 	forum, err := db.InsertIntoForum(data)
@@ -31,7 +32,7 @@ func forumCreate(w http.ResponseWriter, req *http.Request, _ denco.Params) {
 }
 
 func forumGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("forum get info", req.RequestURI)
+	log.Println("forum get info", req.RequestURI)
 	forumSlug := ps.Get("slug")
 	if len(forumSlug) <= 0 {
 		http.Error(w, "incorrect slug", http.StatusBadRequest)
@@ -56,7 +57,7 @@ func forumGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func forumGetUsers(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	//log.Println("forum get users", req.RequestURI)
+	log.Println("forum get users", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
@@ -76,28 +77,27 @@ func forumGetUsers(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 		desc = false
 	}
 
-	users, err := db.SelectForumUsers(slugOrId, int32(limit), since, desc)
+	err = db.SelectForumUsers(slugOrId, int32(limit), since, desc, w)
 
 	if err != nil {
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
-		//_ = json.NewEncoder(w).Encode(models.NotFoundPage{err.Error()})
 		return
 	}
 
-	output, err := json.Marshal(users)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json")
-	_, _ = w.Write(output)
+	//output, err := json.Marshal(users)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//w.Header().Set("content-type", "application/json")
+	//_, _ = w.Write(output)
 }
 
 func forumGetThreads(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("forum get threads:", req.RequestURI)
+	log.Println("forum get threads:", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
@@ -139,22 +139,15 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func forumCreateThread(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("forum create thread", req.RequestURI)
+	log.Println("forum create thread", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	data := models.ThreadInfo{}
-	//body, err := ioutil.ReadAll(req.Body)
-	//defer req.Body.Close()
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	//err = json.Unmarshal(body, &data)
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
 	isMin := false
 	if data.Slug == nil {
 		isMin = true

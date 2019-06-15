@@ -1,9 +1,12 @@
 package db
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx"
 	"github.com/rowbotman/db_forum/models"
+	"net/http"
 	"strconv"
 )
 
@@ -79,6 +82,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 
 		id := int64(0)
 		row = DB.QueryRow(sqlStatement1, slug)
+		fmt.Println(sqlStatement1, slug)
 		err := row.Scan(
 			&id,
 			&forum.Title,
@@ -89,23 +93,26 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 		}
 
 		row = DB.QueryRow(sqlStatement2, slug)
+		fmt.Println(sqlStatement1, slug)
 		err = row.Scan(
 			&id,
 			&forum.User,
 			&forum.Threads)
+
 		if err != nil {
 			return models.Forum{}, err
 		}
 	}
+	fmt.Println("finish")
 	return forum, nil
 }
 
-func SelectForumUsers(slug string, limit int32, since string, desc bool) (models.Users, error) {
+func SelectForumUsers(slug string, limit int32, since string, desc bool, w http.ResponseWriter) error {
 	sqlStatement := `SELECT uid FROM forum WHERE LOWER(slug) = LOWER($1);`
 	forumId := int64(0)
 	err := DB.QueryRow(sqlStatement, slug).Scan(&forumId)
 	if err != nil {
-		return nil, errors.New("Can't find forum by slug: " + slug)
+		return errors.New("Can't find forum by slug: " + slug)
 	}
 	sqlStatement = `
 SELECT * FROM (
@@ -137,12 +144,12 @@ SELECT * FROM (
 	if len(since) > 0 {
 		rows, err = DB.Query(sqlStatement, forumId, since, limit)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else {
 		rows, err = DB.Query(sqlStatement, forumId, limit)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 	defer rows.Close()
@@ -156,21 +163,28 @@ SELECT * FROM (
 			&newUser.About,
 			&newUser.Email)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		users = append(users, newUser)
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return users, nil
+	output, err := json.Marshal(users)
+	if err != nil {
+		//http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	w.Header().Set("content-type", "application/json")
+	_, _ = w.Write(output)
+	return nil
 }
 
 func SelectForumThreads(slug string, limit int32, since string, desc bool) (models.Threads, error) {
-	sqlStatement := `SELECT title FROM forum WHERE LOWER(slug) = LOWER($1)`
+	sqlStatement := `SELECT title FROM forum WHERE LOWER(slug) = LOWER($1);`
 	row := DB.QueryRow(sqlStatement, slug)
 	forum := ""
 	err := row.Scan(&forum)
