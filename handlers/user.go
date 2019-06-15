@@ -6,12 +6,11 @@ import (
 	"github.com/naoina/denco"
 	"github.com/rowbotman/db_forum/db"
 	"github.com/rowbotman/db_forum/models"
-	"log"
 	"net/http"
 )
 
 func userGet(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	log.Println("user get", req.RequestURI)
+	//log.Println("user get", req.RequestURI)
 	nickname := ps.Get("nickname")
 	if len(nickname) <= 0 {
 		http.Error(w, "can't parse nickname", http.StatusBadRequest)
@@ -28,7 +27,7 @@ func userGet(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 }
 
 func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("user create", req.RequestURI)
+	//log.Println("user create", req.RequestURI)
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
@@ -73,7 +72,7 @@ func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func userPost(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	log.Println("user post", req.RequestURI)
+	//log.Println("user post", req.RequestURI)
 	nickname := ps.Get("nickname")
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)

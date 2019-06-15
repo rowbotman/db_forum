@@ -6,26 +6,20 @@ import (
 	"github.com/naoina/denco"
 	"github.com/rowbotman/db_forum/db"
 	"github.com/rowbotman/db_forum/models"
-	"log"
-
-	//"io/ioutil"
-	//"log"
 	"net/http"
 	"strconv"
 )
 
 func forumCreate(w http.ResponseWriter, req *http.Request, _ denco.Params) {
-	log.Println("forum create", req.RequestURI)
+	//log.Println("forum create", req.RequestURI)
 	var data models.DataForNewForum
 	_ = json.UnmarshalFromReader(req.Body, &data)
-	//_ = json.NewDecoder(req.Body).Decode(&data)
 	forum, err := db.InsertIntoForum(data)
 	if err != nil {
 		if len(forum.Slug) > 0 {
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(http.StatusConflict)
 			_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
-			//_ = json.NewEncoder(w).Encode(forum)
 			return
 		}
 		Get404(w, err.Error())
@@ -34,18 +28,15 @@ func forumCreate(w http.ResponseWriter, req *http.Request, _ denco.Params) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
-	//_, _ = json.MarshalToWriter(forum, w)
-	//_ = json.NewEncoder(w).Encode(forum)
 }
 
 func forumGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("forum get info", req.RequestURI)
+	//log.Println("forum get info", req.RequestURI)
 	forumSlug := ps.Get("slug")
 	if len(forumSlug) <= 0 {
 		http.Error(w, "incorrect slug", http.StatusBadRequest)
 		return
 	}
-	////log.Println(forumSlug)
 	forum, err := db.SelectForumInfo(forumSlug, false)
 	if err != nil {
 		if len(forum.Slug) > 0 {
@@ -65,8 +56,7 @@ func forumGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func forumGetUsers(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	log.Println("forum get users", req.RequestURI)
-	////log.Println(req.RequestURI)
+	//log.Println("forum get users", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
@@ -107,7 +97,7 @@ func forumGetUsers(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 }
 
 func forumGetThreads(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("forum get threads:", req.RequestURI)
+	//log.Println("forum get threads:", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
@@ -149,7 +139,7 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func forumCreateThread(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("forum create thread", req.RequestURI)
+	//log.Println("forum create thread", req.RequestURI)
 	slugOrId := ps.Get("slug")
 	data := models.ThreadInfo{}
 	//body, err := ioutil.ReadAll(req.Body)

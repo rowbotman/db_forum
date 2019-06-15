@@ -6,7 +6,6 @@ import (
 	"github.com/naoina/denco"
 	"github.com/rowbotman/db_forum/db"
 	"github.com/rowbotman/db_forum/models"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -38,17 +37,9 @@ func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) 
 }
 
 func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("thread create", req.RequestURI)
+	//log.Println("thread create", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	data := models.Posts{}
-	//body, err := ioutil.ReadAll(req.Body)
-	//defer req.Body.Close()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
-	//
-	//err = json.Unmarshal([]byte(body), &data)
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -63,7 +54,6 @@ func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 			w.WriteHeader(http.StatusConflict)
 		}
 		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
-		//_ = json.NewEncoder(w).Encode(NotFoundPage{err.Error()})
 		return
 	}
 	if err != nil {
@@ -74,11 +64,10 @@ func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
-	//_ = json.NewEncoder(w).Encode(forum)
 }
 
 func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("thread get info", req.RequestURI)
+	//log.Println("thread get info", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	_, err := strconv.ParseInt(slugOrId, 10, 64)
 	thread := models.ThreadInfo{}
@@ -109,7 +98,7 @@ func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 
 
 func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	log.Println("thread get posts:", req.RequestURI)
+	//log.Println("thread get posts:", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	var err error
 	limit := int64(100)
@@ -147,31 +136,13 @@ func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	//output, err := json.Marshal(posts)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//w.Header().Set("content-type", "application/json")
-	//_, _ = w.Write(output)
 }
 
 func threadVote(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	log.Println("thread vote", req.RequestURI)
+	//log.Println("thread vote", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
-	//body, err := ioutil.ReadAll(req.Body)
-	//defer req.Body.Close()
-	//
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-
 	voteInfo := models.VoteInfo{}
 	err := json.UnmarshalFromReader(req.Body, &voteInfo)
-	//err = json.Unmarshal(body, &voteInfo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

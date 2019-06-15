@@ -106,7 +106,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS post
   message   VARCHAR(2048)                NOT NULL,
   is_edited BOOLEAN                               DEFAULT FALSE,
   created   TIMESTAMP(3)  WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
-  author    CITEXT                       DEFAULT NULL
+  author    CITEXT                                DEFAULT NULL
 --   FOREIGN   KEY (forum_id)  REFERENCES forum   (uid),
 --   FOREIGN   KEY (user_id)   REFERENCES profile (uid)
 --   FOREIGN   KEY (parent_id) REFERENCES post    (uid),
