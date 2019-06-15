@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/rowbotman/db_forum/models"
 	"net/http"
 	"path"
 	"strings"
 )
 
-type NotFoundPage struct {
-	Message string `json:"message"`
-}
+
 
 func ShiftPath(p string) (head, tail string) {
 	p = path.Clean("/" + p)
@@ -23,6 +22,6 @@ func ShiftPath(p string) (head, tail string) {
 func Get404(w http.ResponseWriter, what string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	page := NotFoundPage{what}
+	page := models.NotFoundPage{what}
 	_ = json.NewEncoder(w).Encode(page)
 }

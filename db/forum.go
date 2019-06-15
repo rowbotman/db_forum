@@ -1,40 +1,27 @@
 package db
 
 import (
-	"database/sql"
 	"errors"
+	"github.com/jackc/pgx"
+	"github.com/rowbotman/db_forum/models"
 	"strconv"
 )
 
-type Forum struct {
-	Title   string `json:"title,omitempty"`
-	User    string `json:"user,omitempty"`
-	Slug    string `json:"slug,omitempty"`
-	Posts   int    `json:"posts,omitempty"`
-	Threads int    `json:"threads,omitempty"`
-}
-
-type DataForNewForum struct {
-	Title    string `json:"title"`
-	Nickname string `json:"user"`
-	Slug     string `json:"slug"`
-}
-
-func InsertIntoForum(data DataForNewForum) (DataForNewForum, error) {
+func InsertIntoForum(data models.DataForNewForum) (models.DataForNewForum, error) {
 	sqlStatement := `SELECT u.uid, u.nickname FROM profile u WHERE u.nickname = $1;`
 	row := DB.QueryRow(sqlStatement, data.Nickname)
 	authorId := 0
 	nickname := ""
 	err := row.Scan(&authorId, &nickname)
-	if err == sql.ErrNoRows {
-		return DataForNewForum{}, errors.New("Can't find user with nickname: " + data.Nickname)
+	if err == pgx.ErrNoRows {
+		return models.DataForNewForum{}, errors.New("Can't find user with nickname: " + data.Nickname)
 	} else if err != nil {
-		return DataForNewForum{}, err
+		return models.DataForNewForum{}, err
 	}
 	data.Nickname = nickname
 	existForum, err := SelectForumInfo(data.Slug, false)
 	if err == nil {
-		return DataForNewForum{
+		return models.DataForNewForum{
 			existForum.Title,
 			existForum.User,
 			existForum.Slug}, errors.New("slug exist")
@@ -42,29 +29,29 @@ func InsertIntoForum(data DataForNewForum) (DataForNewForum, error) {
 	sqlStatement = `INSERT INTO forum (title, author_id, slug) VALUES ($1, $2, $3);`
 	_, err = DB.Exec(sqlStatement, data.Title, authorId, data.Slug)
 	if err != nil {
-		return DataForNewForum{}, err
+		return models.DataForNewForum{}, err
 	}
 
 	return data, nil
 }
 
-func SelectForumInfo(slug string, isUid bool) (Forum, error) {
-	var forum Forum
+func SelectForumInfo(slug string, isUid bool) (models.Forum, error) {
+	var forum models.Forum
 	sqlStatement1 := `
-SELECT f.uid, f.title, f.slug, COUNT(p.uid) FROM forum f 
-LEFT JOIN post p ON (p.forum_id = f.uid) WHERE `
+SELECT f.uid, f.title, f.slug, m.post_count FROM forum f 
+JOIN forum_meta m ON (m.forum_id = f.uid) WHERE  `
 
 	sqlStatement2 := `
-SELECT f.uid, p.nickname, COUNT(t.uid) FROM forum f 
-LEFT JOIN thread t ON (t.forum_id = f.uid)
+SELECT f.uid, p.nickname, m.thread_count FROM forum f 
+JOIN forum_meta m ON (m.forum_id = f.uid)
 LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
-	var row *sql.Row
+	var row *pgx.Row
 	if isUid {
-		sqlStatement1 += `f.uid = $1 GROUP BY f.uid, f.title;`
-		sqlStatement2 += `f.uid = $1 GROUP BY f.uid, p.nickname;`
+		sqlStatement1 += `f.uid = $1;	`
+		sqlStatement2 += `f.uid = $1;`
 		id, err := strconv.Atoi(slug)
 		if err != nil {
-			return Forum{}, err
+			return models.Forum{}, err
 		}
 
 		row = DB.QueryRow(sqlStatement1, id)
@@ -74,7 +61,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			&forum.Slug,
 			&forum.Posts)
 		if err != nil {
-			return Forum{}, err
+			return models.Forum{}, err
 		}
 
 		row = DB.QueryRow(sqlStatement2, id)
@@ -84,15 +71,13 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			&forum.Threads)
 
 		if err != nil {
-			return Forum{}, err
+			return models.Forum{}, err
 		}
-
 	} else {
-		sqlStatement1 += `LOWER(f.slug) = LOWER($1) GROUP BY f.uid, f.title;`
-		sqlStatement2 += `LOWER(f.slug) = LOWER($1) GROUP BY f.uid, p.nickname;`
+		sqlStatement1 += `LOWER(f.slug) = LOWER($1);`
+		sqlStatement2 += `LOWER(f.slug) = LOWER($1);`
 
 		id := int64(0)
-
 		row = DB.QueryRow(sqlStatement1, slug)
 		err := row.Scan(
 			&id,
@@ -100,7 +85,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			&forum.Slug,
 			&forum.Posts)
 		if err != nil {
-			return Forum{Slug: slug}, errors.New("Can't find forum by slug: " + slug)
+			return models.Forum{Slug: slug}, errors.New("Can't find forum by slug: " + slug)
 		}
 
 		row = DB.QueryRow(sqlStatement2, slug)
@@ -108,28 +93,20 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			&id,
 			&forum.User,
 			&forum.Threads)
-
 		if err != nil {
-			return Forum{}, err
+			return models.Forum{}, err
 		}
 	}
 	return forum, nil
 }
 
-func SelectForumUsers(slug string, limit int32, since string, desc bool) ([]User, error) {
+func SelectForumUsers(slug string, limit int32, since string, desc bool) (models.Users, error) {
 	sqlStatement := `SELECT uid FROM forum WHERE LOWER(slug) = LOWER($1);`
 	forumId := int64(0)
 	err := DB.QueryRow(sqlStatement, slug).Scan(&forumId)
 	if err != nil {
 		return nil, errors.New("Can't find forum by slug: " + slug)
 	}
-	sqlSelect := `SELECT u.uid, u.nickname, u.full_name, u.about, u.email FROM profile u` // TODO: убрать лишний sqlStatement
-	sqlStatement = `
-SELECT * FROM (
-` + sqlSelect + `JOIN thread t ON (t.user_id = u.uid) WHERE t.forum_id = $1 
-UNION
-` + sqlSelect + `JOIN post p   ON (p.user_id = u.uid) WHERE p.forum_id = $1
-) _ ORDER BY nickname COLLATE "C"`
 	sqlStatement = `
 SELECT * FROM (
     SELECT u.uid, u.nickname, u.full_name, u.about, u.email FROM profile u
@@ -156,7 +133,7 @@ SELECT * FROM (
 	} else {
 		sqlStatement += ` LIMIT $2;`
 	}
-	var rows *sql.Rows
+	var rows *pgx.Rows
 	if len(since) > 0 {
 		rows, err = DB.Query(sqlStatement, forumId, since, limit)
 		if err != nil {
@@ -169,9 +146,9 @@ SELECT * FROM (
 		}
 	}
 	defer rows.Close()
-	users := []User{}
+	users := models.Users{}
 	for rows.Next() {
-		newUser := User{}
+		newUser := models.User{}
 		err = rows.Scan(
 			&newUser.Pk,
 			&newUser.Nickname,
@@ -192,13 +169,13 @@ SELECT * FROM (
 	return users, nil
 }
 
-func SelectForumThreads(slug string, limit int32, since string, desc bool) ([]ThreadInfo, error) {
+func SelectForumThreads(slug string, limit int32, since string, desc bool) (models.Threads, error) {
 	sqlStatement := `SELECT title FROM forum WHERE LOWER(slug) = LOWER($1)`
 	row := DB.QueryRow(sqlStatement, slug)
 	forum := ""
 	err := row.Scan(&forum)
-	if err == sql.ErrNoRows {
-		return []ThreadInfo{{Slug: slug}}, errors.New("Can't find forum by slug: " + slug)
+	if err == pgx.ErrNoRows {
+		return models.Threads{{Uid : -1}}, errors.New("Can't find forum by slug: " + slug)
 	} else if err != nil {
 		return nil, err
 	}
@@ -210,7 +187,7 @@ func SelectForumThreads(slug string, limit int32, since string, desc bool) ([]Th
   JOIN profile p ON (t.user_id  = p.uid)
   WHERE LOWER(f.slug) = LOWER($1) `
 
-	var rows *sql.Rows
+	var rows *pgx.Rows
 	if len(since) > 0 {
 		if desc {
 			sqlStatement += ` AND t.created <= $2 ORDER BY t.created DESC LIMIT $3;`
@@ -230,9 +207,9 @@ func SelectForumThreads(slug string, limit int32, since string, desc bool) ([]Th
 		return nil, err
 	}
 	defer rows.Close()
-	threads := []ThreadInfo{}
+	threads := models.Threads{}
 	for rows.Next() {
-		thread := ThreadInfo{}
+		thread := models.ThreadInfo{}
 		err = rows.Scan(
 			&thread.Uid,
 			&thread.Title,
@@ -254,60 +231,78 @@ func SelectForumThreads(slug string, limit int32, since string, desc bool) ([]Th
 	return threads, nil
 }
 
-func InsertIntoThread(slug string, threadData ThreadInfo) (ThreadInfo, error) {
+func InsertIntoThread(slug string, threadData models.ThreadInfo) (models.ThreadInfo, error) {
 	sqlStatement := `SELECT p.uid FROM profile p WHERE p.nickname = $1;`
 	row := DB.QueryRow(sqlStatement, threadData.Author)
 	authorId := int64(0)
 	err := row.Scan(&authorId)
-	if err == sql.ErrNoRows {
-		return ThreadInfo{Uid: -1}, errors.New("Can't find thread author by nickname: " + threadData.Author)
+	if err == pgx.ErrNoRows {
+		return models.ThreadInfo{Uid: -1}, errors.New("Can't find thread author by nickname: " + threadData.Author)
 	} else if err != nil {
-		return ThreadInfo{}, err
+		return models.ThreadInfo{}, err
 	}
 
 	sqlStatement = `SELECT f.uid, f.slug FROM forum f WHERE LOWER(f.slug) = LOWER($1);`
 	row = DB.QueryRow(sqlStatement, slug)
 	forum := int64(0)
 	err = row.Scan(&forum, &threadData.Forum)
-	if err == sql.ErrNoRows {
-		return ThreadInfo{Uid: -1}, errors.New("Can't find thread forum by slug: " + slug)
+	if err == pgx.ErrNoRows {
+		return models.ThreadInfo{Uid: -1}, errors.New("Can't find thread forum by slug: " + slug)
 	} else if err != nil {
-		return ThreadInfo{}, err
+		return models.ThreadInfo{}, err
 	}
 
-	existThread, ok := isThreadExist(threadData.Slug)
-	if ok {
-		threadData.Title = existThread.Title
-		threadData.Slug = existThread.Slug
-		threadData.Message = existThread.Message
-		threadData.Created = existThread.Created
-		threadData.Uid = existThread.Uid
-		sqlStatement = `
+	if threadData.Slug != nil {
+		sqlStatement = `INSERT INTO thread VALUES(default, $1, $2, $3, $4, $5, $6, default) RETURNING uid;`
+		err = DB.QueryRow(
+			sqlStatement,
+			authorId,
+			forum,
+			threadData.Title,
+			threadData.Slug,
+			threadData.Message,
+			threadData.Created).Scan(&threadData.Uid)
+	} else {
+		sqlStatement = `INSERT INTO thread(uid, user_id, forum_id, title, message, created, votes) VALUES(default, $1, $2, $3, $4, $5, default) RETURNING uid;`
+		err = DB.QueryRow(
+			sqlStatement,
+			authorId,
+			forum,
+			threadData.Title,
+			threadData.Message,
+			threadData.Created).Scan(&threadData.Uid)
+	}
+
+	if err == nil {
+		sqlStatement = `CALL inc_threads($1);`
+		_, err = DB.Exec(sqlStatement, forum)
+		if err != nil {
+			return models.ThreadInfo{}, err
+		}
+		return threadData, nil
+	} else {
+		existThread, ok := isThreadExist(*threadData.Slug)
+		if ok {
+			threadData.Title = existThread.Title
+			threadData.Slug = existThread.Slug
+			threadData.Message = existThread.Message
+			threadData.Created = existThread.Created
+			threadData.Uid = existThread.Uid
+			sqlStatement = `
 WITH get_name AS (
     SELECT nickname FROM profile WHERE uid = $1
 ) SELECT slug, nickname FROM forum, get_name WHERE uid = $2`
-		err := DB.QueryRow(
-			sqlStatement,
-			existThread.UserId,
-			existThread.ForumId).Scan(
+			err := DB.QueryRow(
+				sqlStatement,
+				existThread.UserId,
+				existThread.ForumId).Scan(
 				&threadData.Forum,
 				&threadData.Author)
-		if err != nil {
-			return threadData, nil
+			if err != nil {
+				return threadData, nil
+			}
+			return threadData, errors.New("thread exist")
 		}
-		return threadData, errors.New("thread exist")
+		return models.ThreadInfo{Uid: -1}, err
 	}
-	sqlStatement = `INSERT INTO thread VALUES(default, $1, $2, $3, $4, $5, $6, default) RETURNING uid;`
-	err = DB.QueryRow(
-		sqlStatement,
-		authorId,
-		forum,
-		threadData.Title,
-		threadData.Slug,
-		threadData.Message,
-		threadData.Created).Scan(&threadData.Uid)
-	if err != nil {
-		return ThreadInfo{}, err
-	}
-	return threadData, nil
 }

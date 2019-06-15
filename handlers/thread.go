@@ -1,27 +1,19 @@
 package handlers
 
 import (
-	"../db"
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"io/ioutil"
+	json "github.com/mailru/easyjson"
+	"github.com/naoina/denco"
+	"github.com/rowbotman/db_forum/db"
+	"github.com/rowbotman/db_forum/models"
 	"net/http"
 	"strconv"
 )
 
-func threadChangeInfo(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug_or_id"]
-	thread := db.ThreadInfo{}
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = json.Unmarshal(body, &thread)
+func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	slugOrId := ps.Get("slug_or_id")
+	thread := models.ThreadInfo{}
+	err := json.UnmarshalFromReader(req.Body, &thread)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -44,18 +36,19 @@ func threadChangeInfo(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write(output)
 }
 
-func threadCreate(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug_or_id"]
-	data := []db.Post{}
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	err = json.Unmarshal([]byte(body), &data)
+func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	//log.Println("thread create", req.RequestURI)
+	slugOrId := ps.Get("slug_or_id")
+	data := models.Posts{}
+	//body, err := ioutil.ReadAll(req.Body)
+	//defer req.Body.Close()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
+	//
+	//err = json.Unmarshal([]byte(body), &data)
+	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -68,7 +61,8 @@ func threadCreate(w http.ResponseWriter,req *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusConflict)
 		}
-		_ = json.NewEncoder(w).Encode(NotFoundPage{err.Error()})
+		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
+		//_ = json.NewEncoder(w).Encode(NotFoundPage{err.Error()})
 		return
 	}
 	if err != nil {
@@ -78,18 +72,19 @@ func threadCreate(w http.ResponseWriter,req *http.Request) {
 
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(forum)
+	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
+	//_ = json.NewEncoder(w).Encode(forum)
 }
 
-func threadGetInfo(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug_or_id"]
+func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	//log.Println("thread get info", req.RequestURI)
+	slugOrId := ps.Get("slug_or_id")
 	_, err := strconv.ParseInt(slugOrId, 10, 64)
-	thread := db.ThreadInfo{}
+	thread := models.ThreadInfo{}
 	if err != nil {
-		thread, err = db.SelectFromThread(slugOrId, false)
+		err = db.SelectFromThread(slugOrId, false, &thread)
 	} else {
-		thread, err = db.SelectFromThread(slugOrId, true)
+		err = db.SelectFromThread(slugOrId, true, &thread)
 	}
 
 	if err != nil {
@@ -97,6 +92,8 @@ func threadGetInfo(w http.ResponseWriter,req *http.Request) {
 			Get404(w, err.Error())
 			return
 		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	output, err := json.Marshal(thread)
@@ -110,9 +107,9 @@ func threadGetInfo(w http.ResponseWriter,req *http.Request) {
 }
 
 
-func threadGetPosts(w http.ResponseWriter, req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug_or_id"]
+func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+	//log.Println("thread get posts:", req.RequestURI)
+	slugOrId := ps.Get("slug_or_id")
 	var err error
 	limit := int64(100)
 	if limitStr := req.URL.Query().Get("limit"); len(limitStr) != 0 {
@@ -138,39 +135,42 @@ func threadGetPosts(w http.ResponseWriter, req *http.Request) {
 		desc = false
 	}
 
-	posts, err := db.SelectThreadPosts(slugOrId, int32(limit), since, sort, desc)
+	posts, err := db.SelectThreadPosts(slugOrId, int32(limit), since, sort, desc, w)
 	if err != nil {
-		if posts[0].Uid == -1 {
-			Get404(w, err.Error())
-			return
+		if posts != nil {
+			if posts[0].Uid == -1 {
+				Get404(w, err.Error())
+				return
+			}
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	output, err := json.Marshal(posts)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json")
-	_, _ = w.Write(output)
+	//output, err := json.Marshal(posts)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//w.Header().Set("content-type", "application/json")
+	//_, _ = w.Write(output)
 }
 
-func threadVote(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug_or_id"]
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
+func threadVote(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	//log.Println("thread vote", req.RequestURI)
+	slugOrId := ps.Get("slug_or_id")
+	//body, err := ioutil.ReadAll(req.Body)
+	//defer req.Body.Close()
+	//
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	voteInfo := db.VoteInfo{}
-	err = json.Unmarshal(body, &voteInfo)
+	voteInfo := models.VoteInfo{}
+	err := json.UnmarshalFromReader(req.Body, &voteInfo)
+	//err = json.Unmarshal(body, &voteInfo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -186,7 +186,7 @@ func threadVote(w http.ResponseWriter,req *http.Request) {
 		return
 	}
 
-	threadData := map[string]interface{}{
+	threadData := models.FullThreadInfo{
 		"author" : thread.Author,
 		"created": thread.Created,
 		"forum"  : thread.Forum,
@@ -207,11 +207,12 @@ func threadVote(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write(output)
 }
 
-func ThreadHandler(router **mux.Router) {
+func ThreadHandler(router **denco.Mux) []denco.Handler {
 	fmt.Println("threads handlers initialized")
-	(*router).HandleFunc("/api/thread/{slug_or_id}/create",  threadCreate).Methods("POST")
-	(*router).HandleFunc("/api/thread/{slug_or_id}/details", threadGetInfo).Methods("GET")
-	(*router).HandleFunc("/api/thread/{slug_or_id}/details", threadChangeInfo).Methods("POST")
-	(*router).HandleFunc("/api/thread/{slug_or_id}/posts",   threadGetPosts).Methods("GET")
-	(*router).HandleFunc("/api/thread/{slug_or_id}/vote",    threadVote).Methods("POST")
+	return []denco.Handler{
+		(*router).POST("/api/thread/:slug_or_id/create",  threadCreate),
+		(*router).GET( "/api/thread/:slug_or_id/details", threadGetInfo),
+		(*router).POST("/api/thread/:slug_or_id/details", threadChangeInfo),
+		(*router).GET( "/api/thread/:slug_or_id/posts",   threadGetPosts),
+		(*router).POST("/api/thread/:slug_or_id/vote",    threadVote)}
 }

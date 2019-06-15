@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"../db"
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
+	json "github.com/mailru/easyjson"
+	"github.com/naoina/denco"
+	"github.com/rowbotman/db_forum/db"
 	"net/http"
 )
 
-func serviceDrop(w http.ResponseWriter,req *http.Request) {
+func serviceDrop(w http.ResponseWriter, req *http.Request, _ denco.Params) {
+	//log.Println("service drop", req.RequestURI)
 	w.Header().Set("content-type", "text/plain")
 	if db.ClearService() {
 		_, _ = w.Write([]byte("Отчистка базы успешно завершена"))
@@ -17,7 +18,8 @@ func serviceDrop(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write([]byte("error occurred"))
 }
 
-func serviceGetInfo(w http.ResponseWriter,req *http.Request) {
+func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ denco.Params) {
+	//log.Println("service get info", req.RequestURI)
 	w.Header().Set("content-type", "text/plain")
 	status, err := db.ServiceGet()
 	if err != nil {
@@ -34,8 +36,9 @@ func serviceGetInfo(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write(output)
 }
 
-func ServiceHandler(router **mux.Router) {
+func ServiceHandler(router **denco.Mux) []denco.Handler {
 	fmt.Println("services handlers initialized")
-	(*router).HandleFunc("/api/service/clear", serviceDrop).Methods("POST")
-	(*router).HandleFunc("/api/service/status", serviceGetInfo).Methods("GET")
+	return []denco.Handler{
+		(*router).POST("/api/service/clear",  serviceDrop),
+		(*router).GET( "/api/service/status", serviceGetInfo)}
 }
