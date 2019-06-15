@@ -18,6 +18,7 @@ const (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 	pgxConfig := pgx.ConnConfig{
 		Host:     host,
 		Port:     port,

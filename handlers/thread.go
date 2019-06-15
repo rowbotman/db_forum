@@ -6,6 +6,7 @@ import (
 	"github.com/naoina/denco"
 	"github.com/rowbotman/db_forum/db"
 	"github.com/rowbotman/db_forum/models"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -37,7 +38,7 @@ func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) 
 }
 
 func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("thread create", req.RequestURI)
+	log.Println("thread create", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	data := models.Posts{}
 	//body, err := ioutil.ReadAll(req.Body)
@@ -77,7 +78,7 @@ func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("thread get info", req.RequestURI)
+	log.Println("thread get info", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	_, err := strconv.ParseInt(slugOrId, 10, 64)
 	thread := models.ThreadInfo{}
@@ -108,7 +109,7 @@ func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 
 
 func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
-	//log.Println("thread get posts:", req.RequestURI)
+	log.Println("thread get posts:", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	var err error
 	limit := int64(100)
@@ -158,7 +159,7 @@ func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 }
 
 func threadVote(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	//log.Println("thread vote", req.RequestURI)
+	log.Println("thread vote", req.RequestURI)
 	slugOrId := ps.Get("slug_or_id")
 	//body, err := ioutil.ReadAll(req.Body)
 	//defer req.Body.Close()
