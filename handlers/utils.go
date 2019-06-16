@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/rowbotman/db_forum/models"
+	"../models"
 	"net/http"
 	"path"
 	"strings"

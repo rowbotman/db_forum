@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx"
-	"github.com/rowbotman/db_forum/models"
+	"../models"
 	"net/http"
 	"strconv"
 )

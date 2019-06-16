@@ -3,7 +3,7 @@ package db
 import (
 	"errors"
 	"github.com/jackc/pgx"
-	"github.com/rowbotman/db_forum/models"
+	"../models"
 )
 
 

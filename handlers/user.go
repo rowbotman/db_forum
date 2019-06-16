@@ -4,8 +4,8 @@ import (
 	"fmt"
 	json "github.com/mailru/easyjson"
 	"github.com/naoina/denco"
-	"github.com/rowbotman/db_forum/db"
-	"github.com/rowbotman/db_forum/models"
+	"../db"
+	"../models"
 	"log"
 	"net/http"
 )

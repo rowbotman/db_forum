@@ -4,7 +4,7 @@ import (
 	"fmt"
 	json "github.com/mailru/easyjson"
 	"github.com/naoina/denco"
-    "github.com/rowbotman/db_forum/db"
+	"../db"
 	"log"
 	"net/http"
 )
@@ -20,10 +20,11 @@ func serviceDrop(w http.ResponseWriter, req *http.Request, _ denco.Params) {
 }
 
 func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ denco.Params) {
-	log.Println("service get info", req.RequestURI)
+	log.Println("SERVICE get info", req.RequestURI)
 	w.Header().Set("content-type", "text/plain")
 	status, err := db.ServiceGet()
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

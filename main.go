@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/jackc/pgx"
 	"github.com/naoina/denco"
-	"github.com/rowbotman/db_forum/db"
-	"github.com/rowbotman/db_forum/handlers"
+	"./db"
+	"./handlers"
 	"log"
 	"net/http"
 )

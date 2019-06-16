@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/jackc/pgx"
 	json "github.com/mailru/easyjson"
-	"github.com/rowbotman/db_forum/models"
+	"../models"
 	"net/http"
 	"strconv"
 	"time"
