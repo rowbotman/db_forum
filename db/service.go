@@ -1,6 +1,9 @@
 package db
 
-import "github.com/rowbotman/db_forum/models"
+import (
+	"fmt"
+	"github.com/rowbotman/db_forum/models"
+)
 
 func ServiceGet() (models.ServiceInfo, error) {
 	sqlStatement := `SELECT COUNT(*) FROM profile`
@@ -25,6 +28,7 @@ func ServiceGet() (models.ServiceInfo, error) {
 	if err := row.Scan(&info.Post); err != nil {
 		return models.ServiceInfo{}, err
 	}
+	fmt.Println(info)
 	return info, nil
 }
 
