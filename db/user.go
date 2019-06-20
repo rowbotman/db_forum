@@ -9,7 +9,7 @@ import (
 
 func InsertIntoUser(userData models.User) (models.Users, error) {
 	var users models.Users
-	sqlStatement := `SELECT full_name, nickname, email, about FROM profile WHERE LOWER(nickname) = LOWER($1) OR LOWER(email) = LOWER($2);`
+	sqlStatement := `SELECT full_name, nickname, email, about FROM profile WHERE nickname = $1 OR email = $2;`
 	rows, err := DB.Query(sqlStatement, userData.Nickname, userData.Email)
 	if err != nil && !rows.Next() {
 		sqlStatement = `INSERT INTO profile VALUES (default, $1, $2, $3, $4);`
@@ -74,7 +74,7 @@ func SelectUser(nickname string) (models.User, error) {
 
 func UpdateUser(updUser models.User) (models.User, error) {
 	sqlStatement := `
-  SELECT full_name, nickname, email FROM profile WHERE LOWER(email) = LOWER($1);`
+  SELECT full_name, nickname, email FROM profile WHERE email = $1;`
 	row := DB.QueryRow(sqlStatement, updUser.Email)
 	user := models.User{}
 	err := row.Scan(

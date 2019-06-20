@@ -144,7 +144,7 @@ func SelectFromThread(slugOrId string, isId bool, thread *models.ThreadInfo) err
 		}
 		row = DB.QueryRow(sqlStatement, id)
 	} else {
-		sqlStatement += ` LOWER(t.slug) = LOWER($1);`
+		sqlStatement += ` t.slug = $1;`
 		row = DB.QueryRow(sqlStatement, slugOrId)
 	}
 

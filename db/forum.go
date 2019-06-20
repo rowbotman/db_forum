@@ -2,15 +2,15 @@ package db
 
 import (
 	"../models"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx"
+	json "github.com/mailru/easyjson"
 	"net/http"
 	"strconv"
 )
 
-func InsertIntoForum(data models.DataForNewForum) (models.DataForNewForum, error) {
+func InsertIntoForum(data models.DataForNewForum, w http.ResponseWriter) (models.DataForNewForum, error) {
 	sqlStatement := `SELECT u.uid, u.nickname FROM profile u WHERE u.nickname = $1;`
 	row := DB.QueryRow(sqlStatement, data.Nickname)
 	authorId := 0
@@ -25,17 +25,20 @@ func InsertIntoForum(data models.DataForNewForum) (models.DataForNewForum, error
 	existForum, err := SelectForumInfo(data.Slug, false)
 	if err == nil {
 		return models.DataForNewForum{
-			existForum.Title,
-			existForum.User,
-			existForum.Slug}, errors.New("slug exist")
+			Title:    existForum.Title,
+			Nickname: existForum.User,
+			Slug:     existForum.Slug}, errors.New("slug exist")
 	}
 	sqlStatement = `INSERT INTO forum (title, author_id, slug) VALUES ($1, $2, $3);`
 	_, err = DB.Exec(sqlStatement, data.Title, authorId, data.Slug)
 	if err != nil {
 		return models.DataForNewForum{}, err
 	}
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_, _, _ = json.MarshalToHTTPResponseWriter(data, w)
 
-	return data, nil
+	return models.DataForNewForum{}, nil
 }
 
 func SelectForumInfo(slug string, isUid bool) (models.Forum, error) {
@@ -77,8 +80,8 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			return models.Forum{}, err
 		}
 	} else {
-		sqlStatement1 += `LOWER(f.slug) = LOWER($1);`
-		sqlStatement2 += `LOWER(f.slug) = LOWER($1);`
+		sqlStatement1 += `f.slug = $1;`
+		sqlStatement2 += `f.slug = $1;`
 
 		id := int64(0)
 		row = DB.QueryRow(sqlStatement1, slug)
@@ -108,7 +111,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 }
 
 func SelectForumUsers(slug string, limit int32, since string, desc bool, w http.ResponseWriter) error {
-	sqlStatement := `SELECT uid FROM forum WHERE LOWER(slug) = LOWER($1);`
+	sqlStatement := `SELECT uid FROM forum WHERE slug = $1;`
 	forumId := int64(0)
 	err := DB.QueryRow(sqlStatement, slug).Scan(&forumId)
 	if err != nil {
@@ -124,12 +127,12 @@ SELECT * FROM (
 ) _ `
 	if len(since) > 0 {
 		if desc {
-			sqlStatement += `WHERE lower(nickname)::bytea < lower($2)::bytea `
+			sqlStatement += `WHERE nickname < $2 `
 		} else {
-			sqlStatement += `WHERE lower(nickname)::bytea > lower($2)::bytea `
+			sqlStatement += `WHERE nickname > $2 `
 		}
 	}
-	sqlStatement += `ORDER BY lower(nickname)::bytea`
+	sqlStatement += `ORDER BY nickname `
 	if desc {
 		sqlStatement += ` DESC`
 	} else {
@@ -175,7 +178,6 @@ SELECT * FROM (
 
 	output, err := json.Marshal(users)
 	if err != nil {
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 	w.Header().Set("content-type", "application/json")
@@ -183,8 +185,9 @@ SELECT * FROM (
 	return nil
 }
 
-func SelectForumThreads(slug string, limit int32, since string, desc bool) (models.Threads, error) {
-	sqlStatement := `SELECT title FROM forum WHERE LOWER(slug) = LOWER($1);`
+func SelectForumThreads(slug string, limit int32, since string,
+	desc bool, w http.ResponseWriter) (models.Threads, error) {
+	sqlStatement := `SELECT title FROM forum WHERE slug = $1;`
 	row := DB.QueryRow(sqlStatement, slug)
 	forum := ""
 	err := row.Scan(&forum)
@@ -199,7 +202,7 @@ func SelectForumThreads(slug string, limit int32, since string, desc bool) (mode
   FROM forum f
   JOIN thread  t ON (t.forum_id = f.uid)
   JOIN profile p ON (t.user_id  = p.uid)
-  WHERE LOWER(f.slug) = LOWER($1) `
+  WHERE f.slug = $1 `
 
 	var rows *pgx.Rows
 	if len(since) > 0 {
@@ -242,10 +245,19 @@ func SelectForumThreads(slug string, limit int32, since string, desc bool) (mode
 	if err != nil {
 		return nil, err
 	}
-	return threads, nil
+
+	output, err := json.Marshal(threads)
+	if err != nil {
+		//http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, err
+	}
+
+	w.Header().Set("content-type", "application/json")
+	_, _ = w.Write(output)
+	return nil, nil
 }
 
-func InsertIntoThread(slug string, threadData models.ThreadInfo) (models.ThreadInfo, error) {
+func InsertIntoThread(slug string, threadData models.ThreadInfo, isMin bool, w http.ResponseWriter) (models.ThreadInfo, error) {
 	sqlStatement := `SELECT p.uid FROM profile p WHERE p.nickname = $1;`
 	row := DB.QueryRow(sqlStatement, threadData.Author)
 	authorId := int64(0)
@@ -293,7 +305,7 @@ func InsertIntoThread(slug string, threadData models.ThreadInfo) (models.ThreadI
 		if err != nil {
 			return models.ThreadInfo{}, err
 		}
-		return threadData, nil
+		//return threadData, nil
 	} else {
 		existThread, ok := isThreadExist(*threadData.Slug)
 		if ok {
@@ -312,11 +324,31 @@ WITH get_name AS (
 				existThread.ForumId).Scan(
 				&threadData.Forum,
 				&threadData.Author)
-			if err != nil {
-				return threadData, nil
+			if err == nil {
+				return threadData, errors.New("thread exist")
 			}
-			return threadData, errors.New("thread exist")
+		} else {
+			return models.ThreadInfo{Uid: -1}, err
 		}
-		return models.ThreadInfo{Uid: -1}, err
 	}
+	output := []byte{}
+	if isMin {
+		output, err = json.Marshal(models.ThreadInfoMin{
+			Uid:     threadData.Uid,
+			Title:   threadData.Title,
+			Author:  threadData.Author,
+			Forum:   threadData.Forum,
+			Message: threadData.Message,
+			Created: threadData.Created})
+	} else {
+		output, err = json.Marshal(threadData)
+	}
+	if err != nil {
+		return models.ThreadInfo{}, err
+	}
+
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(output)
+	return models.ThreadInfo{}, nil
 }

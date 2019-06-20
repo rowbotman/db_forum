@@ -15,7 +15,7 @@ func forumCreate(w http.ResponseWriter, req *http.Request, _ map[string]string) 
 	log.Println("forum create", req.RequestURI)
 	var data models.DataForNewForum
 	_ = json.UnmarshalFromReader(req.Body, &data)
-	forum, err := db.InsertIntoForum(data)
+	forum, err := db.InsertIntoForum(data, w)
 	if err != nil {
 		if len(forum.Slug) > 0 {
 			w.Header().Set("content-type", "application/json")
@@ -26,9 +26,10 @@ func forumCreate(w http.ResponseWriter, req *http.Request, _ map[string]string) 
 		Get404(w, err.Error())
 		return
 	}
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
+	return
+	//w.Header().Set("content-type", "application/json")
+	//w.WriteHeader(http.StatusCreated)
+	//_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
 }
 
 func forumGetInfo(w http.ResponseWriter,req *http.Request, ps map[string]string) {
@@ -85,15 +86,6 @@ func forumGetUsers(w http.ResponseWriter, req *http.Request, ps map[string]strin
 		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
 		return
 	}
-
-	//output, err := json.Marshal(users)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//w.Header().Set("content-type", "application/json")
-	//_, _ = w.Write(output)
 }
 
 func forumGetThreads(w http.ResponseWriter,req *http.Request, ps map[string]string) {
@@ -117,7 +109,7 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request, ps map[string]stri
 		desc = false
 	}
 
-	users, err := db.SelectForumThreads(slugOrId, int32(limit), since, desc)
+	users, err := db.SelectForumThreads(slugOrId, int32(limit), since, desc, w)
 
 	if err != nil {
 		if users != nil && users[0].Uid < 0 {
@@ -127,18 +119,9 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request, ps map[string]stri
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	output, err := json.Marshal(users)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json")
-	_, _ = w.Write(output)
 }
 
-func forumCreateThread(w http.ResponseWriter,req *http.Request, ps map[string]string) {
+func forumCreateThread(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 	log.Println("forum create thread", req.RequestURI)
 	slugOrId := ps["slug"]
 	data := models.ThreadInfo{}
@@ -152,7 +135,7 @@ func forumCreateThread(w http.ResponseWriter,req *http.Request, ps map[string]st
 	if data.Slug == nil {
 		isMin = true
 	}
-	thread, err := db.InsertIntoThread(slugOrId, data)
+	thread, err := db.InsertIntoThread(slugOrId, data, isMin, w)
 	if err != nil {
 		if  err.Error() == "thread exist" {
 			output := []byte{}
@@ -185,26 +168,6 @@ func forumCreateThread(w http.ResponseWriter,req *http.Request, ps map[string]st
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	output := []byte{}
-	if isMin {
-		output, err = json.Marshal(models.ThreadInfoMin{
-			Uid:     thread.Uid,
-			Title:   thread.Title,
-			Author:  thread.Author,
-			Forum:   thread.Forum,
-			Message: thread.Message,
-			Created: thread.Created})
-	} else {
-		output, err = json.Marshal(thread)
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write(output)
 }
 
 

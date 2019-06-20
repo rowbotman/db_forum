@@ -13,7 +13,7 @@ DROP INDEX IF EXISTS thread_id_idx;
 DROP INDEX IF EXISTS post_id_idx;
 DROP INDEX IF EXISTS post_forumid_idx;
 DROP INDEX IF EXISTS forum_authorid_idx;
-DROP INDEX IF EXISTS profile_lownick_idx;
+DROP INDEX IF EXISTS profile_nick_idx;
 DROP INDEX IF EXISTS profile_id_idx;
 DROP INDEX IF EXISTS thread_slug_idx;
 DROP INDEX IF EXISTS post_parentid_uid_idx;
@@ -29,12 +29,6 @@ DROP INDEX IF EXISTS post_pathcreated_idx;
 DROP INDEX IF EXISTS post_idincl_idx;
 
 TRUNCATE TABLE profile, forum, thread, vote, post, forum_meta CASCADE;
-DROP TABLE     IF EXISTS vote             CASCADE;
-DROP TABLE     IF EXISTS post             CASCADE;
-DROP TABLE     IF EXISTS thread           CASCADE;
-DROP TABLE     IF EXISTS forum            CASCADE;
-DROP TABLE     IF EXISTS profile          CASCADE;
-DROP TABLE     IF EXISTS forum_meta;
 DROP TRIGGER   IF EXISTS t_vote           ON vote;
 DROP TRIGGER   IF EXISTS t_post           ON post;
 DROP TRIGGER   IF EXISTS t_forum_meta     ON post;
@@ -44,6 +38,12 @@ DROP FUNCTION  IF EXISTS clear_post_count();
 DROP PROCEDURE IF EXISTS inc_posts(fid INT, new_posts BIGINT);
 DROP PROCEDURE IF EXISTS inc_threads(fid INT);
 DROP FUNCTION  IF EXISTS add_path();
+DROP TABLE     IF EXISTS vote             CASCADE;
+DROP TABLE     IF EXISTS post             CASCADE;
+DROP TABLE     IF EXISTS forum_meta       CASCADE;
+DROP TABLE     IF EXISTS thread           CASCADE;
+DROP TABLE     IF EXISTS forum            CASCADE;
+DROP TABLE     IF EXISTS profile          CASCADE;
 
 -- DROP TABLE IF EXISTS  CASCADE;
 
@@ -53,7 +53,7 @@ DROP FUNCTION  IF EXISTS add_path();
 CREATE UNLOGGED TABLE IF NOT EXISTS profile
 (
   uid       SERIAL                                              PRIMARY KEY,
-  nickname  CITEXT       UNIQUE NOT NULL CHECK (nickname <> ''),
+  nickname  CITEXT COLLATE ucs_basic UNIQUE NOT NULL CHECK (nickname <> ''),
   full_name VARCHAR(128)        NOT NULL CHECK (nickname <> ''),
   about     TEXT                                                 DEFAULT '',
 --   email     VARCHAR(256) UNIQUE NOT NULL CHECK (email <> '')
@@ -241,16 +241,15 @@ CREATE TRIGGER t_add_forum
 -- profile lower(email) = +1
 
 
-CREATE INDEX IF NOT EXISTS forum_slug_idx        ON forum(LOWER(slug));
+CREATE INDEX IF NOT EXISTS forum_slug_idx        ON forum(slug);
 CREATE INDEX IF NOT EXISTS forum_id_idx          ON forum(uid);
 CREATE INDEX IF NOT EXISTS forum_authorid_idx    ON forum(author_id);
 CREATE INDEX IF NOT EXISTS profile_nick_idx      ON profile(nickname);
-CREATE INDEX IF NOT EXISTS profile_email_idx     ON profile(LOWER(email));
-CREATE INDEX IF NOT EXISTS profile_lownick_idx   ON profile(LOWER(nickname));
+CREATE INDEX IF NOT EXISTS profile_email_idx     ON profile(email);
 CREATE INDEX IF NOT EXISTS profile_id_idx        ON profile(uid); -- ?
 CREATE INDEX IF NOT EXISTS thread_userid_idx     ON thread(user_id);
 CREATE INDEX IF NOT EXISTS thread_forumid_idx    ON thread(forum_id);
-CREATE INDEX IF NOT EXISTS thread_slug_idx       ON thread USING HASH(LOWER(slug));
+CREATE INDEX IF NOT EXISTS thread_slug_idx       ON thread USING HASH(slug);
 CREATE INDEX IF NOT EXISTS thread_id_idx         ON thread(uid);
 CREATE INDEX IF NOT EXISTS post_forumid_idx      ON post(forum_id);
 -- CREATE INDEX IF NOT EXISTS post_parentid_idx     ON post(parent_id);
