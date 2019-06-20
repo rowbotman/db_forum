@@ -1,40 +1,40 @@
 package db
 
-type ServiceInfo struct {
-	User   int64 `json:"user"`
-	Forum  int64 `json:"forum"`
-	Thread int64 `json:"thread"`
-	Post   int64 `json:"post"`
-}
+import (
+	"../models"
+	"fmt"
+)
 
-func ServiceGet() (ServiceInfo, error){
+func ServiceGet() (models.ServiceInfo, error) {
 	sqlStatement := `SELECT COUNT(*) FROM profile`
 	row := DB.QueryRow(sqlStatement)
-	info := ServiceInfo{}
+	info := models.ServiceInfo{}
 	if err := row.Scan(&info.User); err != nil {
-		return ServiceInfo{}, err
+		return models.ServiceInfo{}, err
 	}
 	sqlStatement = `SELECT COUNT(*) FROM forum`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Forum); err != nil {
-		return ServiceInfo{}, err
+		return models.ServiceInfo{}, err
 	}
 	sqlStatement = `SELECT COUNT(*) FROM thread`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Thread); err != nil {
-		return ServiceInfo{}, err
+		return models.ServiceInfo{}, err
 	}
-	sqlStatement = `SELECT COUNT(*) FROM post`
+	// todo: check it
+	sqlStatement = `SELECT SUM(post_count) FROM forum_meta`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Post); err != nil {
-		return ServiceInfo{}, err
+		return models.ServiceInfo{}, err
 	}
+	fmt.Println(info)
 	return info, nil
 }
 
 
 func ClearService() bool {
-	sqlStatement := `TRUNCATE TABLE profile, forum, thread, post, vote`
+	sqlStatement := `TRUNCATE TABLE profile, forum, thread, post, vote, forum_meta CASCADE;`
 	if _, err := DB.Exec(sqlStatement); err != nil {
 		return false
 	}

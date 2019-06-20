@@ -1,28 +1,14 @@
 package db
 
 import (
-	"database/sql"
+	"../models"
 	"errors"
+	"github.com/jackc/pgx"
 )
 
-type User struct {
-	Pk       int64      `json:"-"`         // why we used '-' here?
-	Nickname string     `json:"nickname,omitempty"`
-	Name     string     `json:"fullname,omitempty"`
-	About    string     `json:"about,omitempty"`
-	Email    string     `json:"email,omitempty"`
-}
 
-func (us *User)IsEmpty() bool {
-	if len(us.Email) == 0 &&
-		len(us.Name) == 0 && len(us.About) == 0 {
-		return true
-	}
-	return false
-}
-
-func InsertIntoUser(userData User) ([]User, error) {
-	var users []User
+func InsertIntoUser(userData models.User) (models.Users, error) {
+	var users models.Users
 	sqlStatement := `SELECT full_name, nickname, email, about FROM profile WHERE LOWER(nickname) = LOWER($1) OR LOWER(email) = LOWER($2);`
 	rows, err := DB.Query(sqlStatement, userData.Nickname, userData.Email)
 	if err != nil && !rows.Next() {
@@ -38,7 +24,7 @@ func InsertIntoUser(userData User) ([]User, error) {
 	}
 
 	for rows.Next() {
-		newUser := User{}
+		newUser := models.User{}
 		err = rows.Scan(
 			&newUser.Name,
 			&newUser.Nickname,
@@ -67,46 +53,46 @@ func InsertIntoUser(userData User) ([]User, error) {
 	return users, errors.New("multiple rows")
 }
 
-func SelectUser(nickname string) (User, error) {
-	sqlStatement := `SELECT uid, full_name, nickname, email, about FROM profile WHERE nickname = $1`
+func SelectUser(nickname string) (models.User, error) {
+	sqlStatement := `SELECT uid, full_name, nickname, email, about FROM profile WHERE nickname = $1;`
 	row := DB.QueryRow(sqlStatement, nickname)
-	newUser := User{}
+	newUser := models.User{}
 	err := row.Scan(
 		&newUser.Pk,
 		&newUser.Name,
 		&newUser.Nickname,
 		&newUser.Email,
 		&newUser.About)
-	if err == sql.ErrNoRows {
-		return User{}, errors.New("no rows")
+	if err == pgx.ErrNoRows {
+		return models.User{}, errors.New("no rows")
 	} else if err != nil {
-		return User{}, err
+		return models.User{}, err
 	}
 
 	return newUser, nil
 }
 
-func UpdateUser(updUser User) (User, error) {
+func UpdateUser(updUser models.User) (models.User, error) {
 	sqlStatement := `
   SELECT full_name, nickname, email FROM profile WHERE LOWER(email) = LOWER($1);`
 	row := DB.QueryRow(sqlStatement, updUser.Email)
-	user := User{}
+	user := models.User{}
 	err := row.Scan(
 		&user.Name,
 		&user.Nickname,
 		&user.Email)
-	if err == sql.ErrNoRows || user.Nickname == updUser.Nickname {
+	if err == pgx.ErrNoRows || user.Nickname == updUser.Nickname {
 		if updUser.IsEmpty() {
 			userInfo, err := SelectUser(updUser.Nickname)
 			if err != nil {
-				return User{}, err
+				return models.User{}, err
 			}
 			return userInfo, nil
 		}
 
 		userInfo, err := SelectUser(updUser.Nickname)
 		if err != nil {
-			return User{}, err
+			return models.User{}, err
 		}
 		if len(updUser.About) == 0 {
 			updUser.About = userInfo.About
@@ -121,7 +107,7 @@ func UpdateUser(updUser User) (User, error) {
 		sqlStatement = `UPDATE profile SET full_name = $1, email = $2, about = $3 WHERE nickname = $4;`
 		_, err = DB.Exec(sqlStatement, updUser.Name, updUser.Email, updUser.About, updUser.Nickname)
 		if err != nil {
-			return User{}, err
+			return models.User{}, err
 		}
 
 		return updUser, nil

@@ -2,24 +2,25 @@ package handlers
 
 import (
 	"../db"
-	"encoding/json"
+	"../models"
 	"fmt"
-	"github.com/gorilla/mux"
-	"io/ioutil"
+	json "github.com/mailru/easyjson"
+	"github.com/naoina/denco"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func forumCreate(w http.ResponseWriter, req *http.Request) {
-	var data db.DataForNewForum
-	_ = json.NewDecoder(req.Body).Decode(&data)
+func forumCreate(w http.ResponseWriter, req *http.Request, _ denco.Params) {
+	log.Println("forum create", req.RequestURI)
+	var data models.DataForNewForum
+	_ = json.UnmarshalFromReader(req.Body, &data)
 	forum, err := db.InsertIntoForum(data)
 	if err != nil {
 		if len(forum.Slug) > 0 {
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(http.StatusConflict)
-			_ = json.NewEncoder(w).Encode(forum)
+			_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
 			return
 		}
 		Get404(w, err.Error())
@@ -27,17 +28,16 @@ func forumCreate(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(forum)
+	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
 }
 
-func forumGetInfo(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	forumSlug, ok := params["slug"]
-	if !ok {
+func forumGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	log.Println("forum get info", req.RequestURI)
+	forumSlug := ps.Get("slug")
+	if len(forumSlug) <= 0 {
 		http.Error(w, "incorrect slug", http.StatusBadRequest)
 		return
 	}
-	log.Println(forumSlug)
 	forum, err := db.SelectForumInfo(forumSlug, false)
 	if err != nil {
 		if len(forum.Slug) > 0 {
@@ -56,9 +56,9 @@ func forumGetInfo(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write(js)
 }
 
-func forumGetUsers(w http.ResponseWriter, req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug"]
+func forumGetUsers(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+	log.Println("forum get users", req.RequestURI)
+	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
 	if limitStr := req.URL.Query().Get("limit"); len(limitStr) > 0 {
@@ -77,28 +77,28 @@ func forumGetUsers(w http.ResponseWriter, req *http.Request) {
 		desc = false
 	}
 
-	users, err := db.SelectForumUsers(slugOrId, int32(limit), since, desc)
+	err = db.SelectForumUsers(slugOrId, int32(limit), since, desc, w)
 
 	if err != nil {
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(NotFoundPage{err.Error()})
+		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
 		return
 	}
 
-	output, err := json.Marshal(users)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json")
-	_, _ = w.Write(output)
+	//output, err := json.Marshal(users)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//w.Header().Set("content-type", "application/json")
+	//_, _ = w.Write(output)
 }
 
-func forumGetThreads(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug"]
+func forumGetThreads(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	log.Println("forum get threads:", req.RequestURI)
+	slugOrId := ps.Get("slug")
 	var err error
 	limit := int64(100)
 	if limitStr := req.URL.Query().Get("limit"); len(limitStr) > 0 {
@@ -120,7 +120,7 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request) {
 	users, err := db.SelectForumThreads(slugOrId, int32(limit), since, desc)
 
 	if err != nil {
-		if users != nil && len(users[0].Slug) > 0 {
+		if users != nil && users[0].Uid < 0 {
 			Get404(w, err.Error())
 			return
 		}
@@ -138,33 +138,26 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request) {
 	_, _ = w.Write(output)
 }
 
-func forumCreateThread(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	slugOrId, _ := params["slug"]
-	data := db.ThreadInfo{}
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
+func forumCreateThread(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	log.Println("forum create thread", req.RequestURI)
+	slugOrId := ps.Get("slug")
+	data := models.ThreadInfo{}
+	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
 	isMin := false
-	if len(data.Slug) == 0 {
+	if data.Slug == nil {
 		isMin = true
-		data.Slug = slugOrId
 	}
 	thread, err := db.InsertIntoThread(slugOrId, data)
 	if err != nil {
 		if  err.Error() == "thread exist" {
 			output := []byte{}
 			if isMin {
-				output, err = json.Marshal(db.ThreadInfoMin{
+				output, err = json.Marshal(models.ThreadInfoMin{
 					Uid:     thread.Uid,
 					Title:   thread.Title,
 					Author:  thread.Author,
@@ -194,7 +187,7 @@ func forumCreateThread(w http.ResponseWriter,req *http.Request) {
 	}
 	output := []byte{}
 	if isMin {
-		output, err = json.Marshal(db.ThreadInfoMin{
+		output, err = json.Marshal(models.ThreadInfoMin{
 			Uid:     thread.Uid,
 			Title:   thread.Title,
 			Author:  thread.Author,
@@ -215,12 +208,13 @@ func forumCreateThread(w http.ResponseWriter,req *http.Request) {
 }
 
 
-func ForumHandler(router **mux.Router) {
+func ForumHandler(router **denco.Mux) []denco.Handler {
 	fmt.Println("forums handlers initialized")
-	(*router).HandleFunc("/api/forum/create",         forumCreate).Methods("POST")
-	(*router).HandleFunc("/api/forum/{slug}/details", forumGetInfo).Methods("GET")
-	(*router).HandleFunc("/api/forum/{slug}/create",  forumCreateThread).Methods("POST")
-	(*router).HandleFunc("/api/forum/{slug}/users",   forumGetUsers).Methods("GET")
-	(*router).HandleFunc("/api/forum/{slug}/threads", forumGetThreads).Methods("GET")
+	return []denco.Handler{
+		(*router).POST("/api/forum/create",        forumCreate),
+		(*router).GET( "/api/forum/:slug/details", forumGetInfo),
+		(*router).POST("/api/forum/:slug/create",  forumCreateThread),
+		(*router).GET( "/api/forum/:slug/users",   forumGetUsers),
+		(*router).GET( "/api/forum/:slug/threads", forumGetThreads)}
 }
 

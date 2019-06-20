@@ -2,18 +2,19 @@ package handlers
 
 import (
 	"../db"
-	"encoding/json"
+	"../models"
 	"fmt"
-	"github.com/gorilla/mux"
-	"io/ioutil"
+	json "github.com/mailru/easyjson"
+	"github.com/naoina/denco"
+	"log"
 	"net/http"
 )
 
-func userGet(w http.ResponseWriter, req *http.Request) {
-	params := mux.Vars(req)
-	nickname, ok := params["nickname"]
-	if !ok {
-		http.Error(w, "can't parse slug", http.StatusBadRequest)
+func userGet(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+	log.Println("user get", req.RequestURI)
+	nickname := ps.Get("nickname")
+	if len(nickname) <= 0 {
+		http.Error(w, "can't parse nickname", http.StatusBadRequest)
 		return
 	}
 	user, err := db.SelectUser(nickname)
@@ -23,26 +24,19 @@ func userGet(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(user)
+	_, _, _ = json.MarshalToHTTPResponseWriter(user, w)
 }
 
-func userCreate(w http.ResponseWriter,req *http.Request) {
-	params := mux.Vars(req)
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
+func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+	log.Println("user create", req.RequestURI)
+	data := models.User{}
+	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	data := db.User{}
-	data.Nickname, _ = params["nickname"]
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
+	data.Nickname = ps.Get("nickname")
 	newUser, err := db.InsertIntoUser(data)
 	if err != nil {
 		if len(newUser) > 0 {
@@ -78,34 +72,28 @@ func userCreate(w http.ResponseWriter,req *http.Request) {
 	}
 }
 
-func userPost(w http.ResponseWriter, req *http.Request) {
-	params := mux.Vars(req)
-	nickname, _ := params["nickname"]
-	body, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
+func userPost(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+	log.Println("user post", req.RequestURI)
+	nickname := ps.Get("nickname")
+	data := models.User{}
+	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	data := db.User{}
 	data.Nickname = nickname
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
 	user, err := db.UpdateUser(data)
 	if err != nil {
 		w.Header().Set("content-type", "application/json")
 		if err.Error() == "no rows" {
 			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(NotFoundPage{"Can't find user by nickname: " + nickname})
+			_, _, _ = json.MarshalToHTTPResponseWriter(
+				models.NotFoundPage{"Can't find user by nickname: " + nickname}, w)
 			return
 		}
 		w.WriteHeader(http.StatusConflict)
-		_ = json.NewEncoder(w).Encode(NotFoundPage{err.Error()})
+		_, _, _ = json.MarshalToHTTPResponseWriter(models.NotFoundPage{err.Error()}, w)
 		return
 	}
 	output, err := json.Marshal(user)
@@ -118,9 +106,11 @@ func userPost(w http.ResponseWriter, req *http.Request) {
 	_, _ = w.Write(output)
 }
 
-func UserHandler(router **mux.Router) {
+func UserHandler(router **denco.Mux) []denco.Handler {
 	fmt.Println("user handlers initialized")
-	(*router).HandleFunc("/api/user/{nickname}/create",  userCreate)
-	(*router).HandleFunc("/api/user/{nickname}/profile", userGet).Methods("GET")
-	(*router).HandleFunc("/api/user/{nickname}/profile", userPost).Methods("POST")
+	return []denco.Handler{
+		(*router).POST("/api/user/:nickname/create",  userCreate),
+		(*router).GET( "/api/user/:nickname/profile", userGet),
+		(*router).POST("/api/user/:nickname/profile", userPost),
+	}
 }

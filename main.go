@@ -3,9 +3,8 @@ package main
 import (
 	"./db"
 	"./handlers"
-	"database/sql"
-	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/jackc/pgx"
+	"github.com/naoina/denco"
 	"log"
 	"net/http"
 )
@@ -19,30 +18,43 @@ const (
 )
 
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	pgxConfig := pgx.ConnConfig{
+		Host:     host,
+		Port:     port,
+		Database: dbname,
+		User:     user,
+		Password: password,
+	}
+	pgxConnPoolConfig := pgx.ConnPoolConfig{
+		ConnConfig: pgxConfig,
+	}
 	var err error
-	db.DB, err = sql.Open("postgres", psqlInfo)
+	db.DB, err = pgx.NewConnPool(pgxConnPoolConfig)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer db.DB.Close()
 
-	err = db.DB.Ping()
-	if err != nil {
-		panic(err)
+	router := denco.NewMux()
+	handlerArray := handlers.UserHandler(&router)
+	for _, elem := range handlers.ForumHandler(&router) {
+		handlerArray = append(handlerArray, elem)
+	}
+	for _, elem := range handlers.PostHandler(&router) {
+		handlerArray = append(handlerArray, elem)
+	}
+	for _, elem := range handlers.ServiceHandler(&router) {
+		handlerArray = append(handlerArray, elem)
+	}
+	for _, elem := range handlers.ThreadHandler(&router) {
+		handlerArray = append(handlerArray, elem)
 	}
 
-	router := mux.NewRouter()
-	handlers.UserHandler(&router)
-	handlers.ForumHandler(&router)
-	handlers.PostHandler(&router)
-	handlers.ServiceHandler(&router)
-	handlers.ThreadHandler(&router)
-	http.Handle("/",router)
+	handler, err := router.Build(handlerArray)
+	http.Handle("/", handler)
 
-	err = http.ListenAndServe(":5000", router)
+	err = http.ListenAndServe(":5000", handler)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
