@@ -58,7 +58,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS profile
   about     TEXT                                                 DEFAULT '',
 --   email     VARCHAR(256) UNIQUE NOT NULL CHECK (email <> '')
   email     CITEXT UNIQUE       NOT NULL CHECK (email <> '')
-) WITH (autovacuum_enabled = off);
+);
 
 CREATE UNLOGGED TABLE IF NOT EXISTS forum
 (
@@ -68,7 +68,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS forum
   slug      CITEXT       UNIQUE NOT NULL,
 --   slug      VARCHAR(256) UNIQUE NOT NULL,
   FOREIGN   KEY (author_id) REFERENCES profile (uid) -- попробовать убрать
-) WITH (autovacuum_enabled = off);
+);
 
 CREATE UNLOGGED TABLE IF NOT EXISTS forum_meta
 (
@@ -76,7 +76,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS forum_meta
     post_count   BIGINT DEFAULT 0,
     user_count   BIGINT DEFAULT 0,
     thread_count BIGINT DEFAULT 0
-) WITH (autovacuum_enabled = off);
+);
 
 
 CREATE UNLOGGED TABLE IF NOT EXISTS thread
@@ -93,7 +93,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS thread
 
   FOREIGN  KEY (user_id)  REFERENCES profile (uid),
   FOREIGN  KEY (forum_id) REFERENCES forum   (uid)
-) WITH (autovacuum_enabled = off);
+);
 
 CREATE UNLOGGED TABLE IF NOT EXISTS post
 (
@@ -111,7 +111,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS post
 --   FOREIGN   KEY (user_id)   REFERENCES profile (uid)
 --   FOREIGN   KEY (parent_id) REFERENCES post    (uid),
 --   FOREIGN   KEY (thread_id) REFERENCES thread  (uid)
-) WITH (autovacuum_enabled = off);
+);
 
 CREATE UNLOGGED TABLE IF NOT EXISTS vote
 (
@@ -122,7 +122,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS vote
 
   FOREIGN KEY (user_id)   REFERENCES profile (uid) ON DELETE CASCADE,
   FOREIGN KEY (thread_id) REFERENCES thread  (uid) ON DELETE CASCADE
-) WITH (autovacuum_enabled = off);
+);
 
 
 CREATE OR REPLACE FUNCTION add_to_thread() RETURNS TRIGGER AS $$

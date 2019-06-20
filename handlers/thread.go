@@ -6,7 +6,6 @@ import (
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"log"
 	"net/http"
 	"strconv"
 )
