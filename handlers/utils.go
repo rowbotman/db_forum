@@ -29,6 +29,6 @@ func getRootPage(writer http.ResponseWriter, request *http.Request, ps map[strin
 	writer.WriteHeader(200)
 }
 
-func RootHandler(router **htmux.TreeMux) {
-	(*router).GET("/", getRootPage)
+func RootHandler(router *htmux.TreeMux) {
+	router.GET("/", getRootPage)
 }

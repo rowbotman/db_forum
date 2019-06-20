@@ -37,14 +37,12 @@ func main() {
 	defer db.DB.Close()
 
 	router := htmux.New()
-	handlers.UserHandler(&router)
-	handlers.ForumHandler(&router)
-	handlers.PostHandler(&router)
-	handlers.ServiceHandler(&router)
-	handlers.ThreadHandler(&router)
-	handlers.RootHandler(&router)
-
-	//http.Handle("/", router)
+	handlers.UserHandler(router)
+	handlers.ForumHandler(router)
+	handlers.PostHandler(router)
+	handlers.ServiceHandler(router)
+	handlers.ThreadHandler(router)
+	handlers.RootHandler(router)
 
 	err = http.ListenAndServe(":5000", router)
 	if err != nil {

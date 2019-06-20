@@ -106,9 +106,9 @@ func userPost(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 	_, _ = w.Write(output)
 }
 
-func UserHandler(router **htmux.TreeMux) {
+func UserHandler(router *htmux.TreeMux) {
 	fmt.Println("user handlers initialized")
-	(*router).POST("/api/user/:nickname/create",  userCreate)
-	(*router).GET( "/api/user/:nickname/profile", userGet)
-	(*router).POST("/api/user/:nickname/profile", userPost)
+	router.POST("/api/user/:nickname/create",  userCreate)
+	router.GET( "/api/user/:nickname/profile", userGet)
+	router.POST("/api/user/:nickname/profile", userPost)
 }

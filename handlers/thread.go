@@ -180,11 +180,11 @@ func threadVote(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 	_, _ = w.Write(output)
 }
 
-func ThreadHandler(router **htmux.TreeMux) {
+func ThreadHandler(router *htmux.TreeMux) {
 	fmt.Println("threads handlers initialized")
-	(*router).POST("/api/thread/:slug_or_id/create",  threadCreate)
-	(*router).GET( "/api/thread/:slug_or_id/details", threadGetInfo)
-	(*router).POST("/api/thread/:slug_or_id/details", threadChangeInfo)
-	(*router).GET( "/api/thread/:slug_or_id/posts",   threadGetPosts)
-	(*router).POST("/api/thread/:slug_or_id/vote",    threadVote)
+	router.POST("/api/thread/:slug_or_id/create",  threadCreate)
+	router.GET( "/api/thread/:slug_or_id/details", threadGetInfo)
+	router.POST("/api/thread/:slug_or_id/details", threadChangeInfo)
+	router.GET( "/api/thread/:slug_or_id/posts",   threadGetPosts)
+	router.POST("/api/thread/:slug_or_id/vote",    threadVote)
 }

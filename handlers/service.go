@@ -37,8 +37,8 @@ func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ map[string]strin
 	_, _ = w.Write(output)
 }
 
-func ServiceHandler(router **htmux.TreeMux) {
+func ServiceHandler(router *htmux.TreeMux) {
 	fmt.Println("services handlers initialized")
-	(*router).POST("/api/service/clear",  serviceDrop)
-	(*router).GET( "/api/service/status", serviceGetInfo)
+	router.POST("/api/service/clear",  serviceDrop)
+	router.GET( "/api/service/status", serviceGetInfo)
 }

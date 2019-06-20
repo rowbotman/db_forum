@@ -208,12 +208,12 @@ func forumCreateThread(w http.ResponseWriter,req *http.Request, ps map[string]st
 }
 
 
-func ForumHandler(router **htmux.TreeMux) {
+func ForumHandler(router *htmux.TreeMux) {
 	fmt.Println("forums handlers initialized")
-	(*router).POST("/api/forum/create",        forumCreate)
-	(*router).GET( "/api/forum/:slug/details", forumGetInfo)
-	(*router).POST("/api/forum/:slug/create",  forumCreateThread)
-	(*router).GET( "/api/forum/:slug/users",   forumGetUsers)
-	(*router).GET( "/api/forum/:slug/threads", forumGetThreads)
+	router.POST("/api/forum/create",        forumCreate)
+	router.GET( "/api/forum/:slug/details", forumGetInfo)
+	router.POST("/api/forum/:slug/create",  forumCreateThread)
+	router.GET( "/api/forum/:slug/users",   forumGetUsers)
+	router.GET( "/api/forum/:slug/threads", forumGetThreads)
 }
 

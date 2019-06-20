@@ -77,8 +77,8 @@ func PostGetInfo(w http.ResponseWriter, req *http.Request, ps map[string]string)
 	}
 }
 
-func PostHandler(router **htmux.TreeMux) {
+func PostHandler(router *htmux.TreeMux) {
 	fmt.Println("posts handlers initialized")
-	(*router).POST("/api/post/:id/details", PostChangeInfo)
-	(*router).GET( "/api/post/:id/details", PostGetInfo)
+	router.POST("/api/post/:id/details", PostChangeInfo)
+	router.GET( "/api/post/:id/details", PostGetInfo)
 }
