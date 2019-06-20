@@ -55,18 +55,18 @@ CREATE UNLOGGED TABLE IF NOT EXISTS profile
   uid       SERIAL                                              PRIMARY KEY,
   nickname  CITEXT       UNIQUE NOT NULL CHECK (nickname <> ''),
   full_name VARCHAR(128)        NOT NULL CHECK (nickname <> ''),
-  about     VARCHAR(512)                                         DEFAULT '',
-  email     VARCHAR(256) UNIQUE NOT NULL CHECK (email <> '')
---   email     CITEXT UNIQUE       NOT NULL CHECK (email <> '')
+  about     TEXT                                                 DEFAULT '',
+--   email     VARCHAR(256) UNIQUE NOT NULL CHECK (email <> '')
+  email     CITEXT UNIQUE       NOT NULL CHECK (email <> '')
 ) WITH (autovacuum_enabled = off);
 
 CREATE UNLOGGED TABLE IF NOT EXISTS forum
 (
   uid       SERIAL                                          PRIMARY KEY,
-  title     VARCHAR(128)        NOT NULL CHECK ( title <> '' ),
+  title     TEXT        NOT NULL CHECK ( title <> '' ),
   author_id INT                 NOT NULL,
---   slug      CITEXT       UNIQUE NOT NULL,
-  slug      VARCHAR(256) UNIQUE NOT NULL,
+  slug      CITEXT       UNIQUE NOT NULL,
+--   slug      VARCHAR(256) UNIQUE NOT NULL,
   FOREIGN   KEY (author_id) REFERENCES profile (uid) -- попробовать убрать
 ) WITH (autovacuum_enabled = off);
 
@@ -84,10 +84,10 @@ CREATE UNLOGGED TABLE IF NOT EXISTS thread
   uid      SERIAL                                            PRIMARY KEY,
   user_id  INT                         NOT NULL,
   forum_id INT                         NOT NULL,
-  title    VARCHAR(128)                NOT NULL CHECK ( title <> '' ),
+  title    TEXT                        NOT NULL CHECK ( title <> '' ),
 --   slug     CITEXT       UNIQUE         NOT NULL,
   slug     CITEXT UNIQUE         ,
-  message  VARCHAR(2048)               NOT NULL,
+  message  TEXT                        NOT NULL,
   created  TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
   votes    INT                         NOT NULL DEFAULT 0,
 
@@ -103,7 +103,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS post
   forum_id  INT                          NOT NULL,
   user_id   INT                          NOT NULL,
   thread_id INT                          NOT NULL,
-  message   VARCHAR(2048)                NOT NULL,
+  message   TEXT                         NOT NULL,
   is_edited BOOLEAN                               DEFAULT FALSE,
   created   TIMESTAMP(3)  WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
   author    CITEXT                                DEFAULT NULL

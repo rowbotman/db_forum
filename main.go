@@ -3,8 +3,8 @@ package main
 import (
 	"./db"
 	"./handlers"
+	htmux "github.com/dimfeld/httptreemux"
 	"github.com/jackc/pgx"
-	"github.com/naoina/denco"
 	"log"
 	"net/http"
 )
@@ -36,25 +36,17 @@ func main() {
 	}
 	defer db.DB.Close()
 
-	router := denco.NewMux()
-	handlerArray := handlers.UserHandler(&router)
-	for _, elem := range handlers.ForumHandler(&router) {
-		handlerArray = append(handlerArray, elem)
-	}
-	for _, elem := range handlers.PostHandler(&router) {
-		handlerArray = append(handlerArray, elem)
-	}
-	for _, elem := range handlers.ServiceHandler(&router) {
-		handlerArray = append(handlerArray, elem)
-	}
-	for _, elem := range handlers.ThreadHandler(&router) {
-		handlerArray = append(handlerArray, elem)
-	}
+	router := htmux.New()
+	handlers.UserHandler(&router)
+	handlers.ForumHandler(&router)
+	handlers.PostHandler(&router)
+	handlers.ServiceHandler(&router)
+	handlers.ThreadHandler(&router)
+	handlers.RootHandler(&router)
 
-	handler, err := router.Build(handlerArray)
-	http.Handle("/", handler)
+	//http.Handle("/", router)
 
-	err = http.ListenAndServe(":5000", handler)
+	err = http.ListenAndServe(":5000", router)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

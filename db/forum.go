@@ -256,7 +256,7 @@ func InsertIntoThread(slug string, threadData models.ThreadInfo) (models.ThreadI
 		return models.ThreadInfo{}, err
 	}
 
-	sqlStatement = `SELECT f.uid, f.slug FROM forum f WHERE LOWER(f.slug) = LOWER($1);`
+	sqlStatement = `SELECT f.uid, f.slug FROM forum f WHERE f.slug = $1;`
 	row = DB.QueryRow(sqlStatement, slug)
 	forum := int64(0)
 	err = row.Scan(&forum, &threadData.Forum)

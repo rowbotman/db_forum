@@ -22,7 +22,7 @@ func ServiceGet() (models.ServiceInfo, error) {
 	if err := row.Scan(&info.Thread); err != nil {
 		return models.ServiceInfo{}, err
 	}
-	// todo: check it
+
 	var postsPtr *int64
 	sqlStatement = `SELECT SUM(post_count) FROM forum_meta;`
 	row = DB.QueryRow(sqlStatement)

@@ -16,7 +16,7 @@ func isThreadExist(slugOrId string) (models.Thread, bool) {
 	var row *pgx.Row
 	thread := models.Thread{}
 	if err != nil {
-		sqlStatement += `WHERE LOWER(slug) = LOWER($1);`
+		sqlStatement += `WHERE slug = $1;`
 		row = DB.QueryRow(sqlStatement, slugOrId)
 	} else {
 		sqlStatement += `WHERE uid = $1;`

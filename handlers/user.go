@@ -4,15 +4,15 @@ import (
 	"../db"
 	"../models"
 	"fmt"
+	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"github.com/naoina/denco"
 	"log"
 	"net/http"
 )
 
-func userGet(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+func userGet(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 	log.Println("user get", req.RequestURI)
-	nickname := ps.Get("nickname")
+	nickname := ps["nickname"]
 	if len(nickname) <= 0 {
 		http.Error(w, "can't parse nickname", http.StatusBadRequest)
 		return
@@ -27,7 +27,7 @@ func userGet(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 	_, _, _ = json.MarshalToHTTPResponseWriter(user, w)
 }
 
-func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+func userCreate(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 	log.Println("user create", req.RequestURI)
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)
@@ -36,7 +36,7 @@ func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 		return
 	}
 
-	data.Nickname = ps.Get("nickname")
+	data.Nickname = ps["nickname"]
 	newUser, err := db.InsertIntoUser(data)
 	if err != nil {
 		if len(newUser) > 0 {
@@ -72,9 +72,9 @@ func userCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 	}
 }
 
-func userPost(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+func userPost(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 	log.Println("user post", req.RequestURI)
-	nickname := ps.Get("nickname")
+	nickname := ps["nickname"]
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
@@ -106,11 +106,9 @@ func userPost(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 	_, _ = w.Write(output)
 }
 
-func UserHandler(router **denco.Mux) []denco.Handler {
+func UserHandler(router **htmux.TreeMux) {
 	fmt.Println("user handlers initialized")
-	return []denco.Handler{
-		(*router).POST("/api/user/:nickname/create",  userCreate),
-		(*router).GET( "/api/user/:nickname/profile", userGet),
-		(*router).POST("/api/user/:nickname/profile", userPost),
-	}
+	(*router).POST("/api/user/:nickname/create",  userCreate)
+	(*router).GET( "/api/user/:nickname/profile", userGet)
+	(*router).POST("/api/user/:nickname/profile", userPost)
 }

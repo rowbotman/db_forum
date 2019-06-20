@@ -3,6 +3,7 @@ package handlers
 import (
 	"../models"
 	"encoding/json"
+	htmux "github.com/dimfeld/httptreemux"
 	"net/http"
 	"path"
 	"strings"
@@ -22,4 +23,12 @@ func Get404(w http.ResponseWriter, what string) {
 	w.WriteHeader(http.StatusNotFound)
 	page := models.NotFoundPage{what}
 	_ = json.NewEncoder(w).Encode(page)
+}
+
+func getRootPage(writer http.ResponseWriter, request *http.Request, ps map[string]string) {
+	writer.WriteHeader(200)
+}
+
+func RootHandler(router **htmux.TreeMux) {
+	(*router).GET("/", getRootPage)
 }

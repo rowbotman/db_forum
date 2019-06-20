@@ -4,15 +4,15 @@ import (
 	"../db"
 	"../models"
 	"fmt"
+	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"github.com/naoina/denco"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
-	slugOrId := ps.Get("slug_or_id")
+func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps map[string]string) {
+	slugOrId := ps["slug_or_id"]
 	thread := models.ThreadInfo{}
 	err := json.UnmarshalFromReader(req.Body, &thread)
 	if err != nil {
@@ -37,9 +37,9 @@ func threadChangeInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) 
 	_, _ = w.Write(output)
 }
 
-func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+func threadCreate(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 	log.Println("thread create", req.RequestURI)
-	slugOrId := ps.Get("slug_or_id")
+	slugOrId := ps["slug_or_id"]
 	data := models.Posts{}
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
@@ -67,9 +67,9 @@ func threadCreate(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 	_, _, _ = json.MarshalToHTTPResponseWriter(forum, w)
 }
 
-func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+func threadGetInfo(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 	log.Println("thread get info", req.RequestURI)
-	slugOrId := ps.Get("slug_or_id")
+	slugOrId := ps["slug_or_id"]
 	_, err := strconv.ParseInt(slugOrId, 10, 64)
 	thread := models.ThreadInfo{}
 	if err != nil {
@@ -98,9 +98,9 @@ func threadGetInfo(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 }
 
 
-func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
+func threadGetPosts(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 	log.Println("thread get posts:", req.RequestURI)
-	slugOrId := ps.Get("slug_or_id")
+	slugOrId := ps["slug_or_id"]
 	var err error
 	limit := int64(100)
 	if limitStr := req.URL.Query().Get("limit"); len(limitStr) != 0 {
@@ -139,9 +139,9 @@ func threadGetPosts(w http.ResponseWriter, req *http.Request, ps denco.Params) {
 	}
 }
 
-func threadVote(w http.ResponseWriter,req *http.Request, ps denco.Params) {
+func threadVote(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 	log.Println("thread vote", req.RequestURI)
-	slugOrId := ps.Get("slug_or_id")
+	slugOrId := ps["slug_or_id"]
 	voteInfo := models.VoteInfo{}
 	err := json.UnmarshalFromReader(req.Body, &voteInfo)
 	if err != nil {
@@ -180,12 +180,11 @@ func threadVote(w http.ResponseWriter,req *http.Request, ps denco.Params) {
 	_, _ = w.Write(output)
 }
 
-func ThreadHandler(router **denco.Mux) []denco.Handler {
+func ThreadHandler(router **htmux.TreeMux) {
 	fmt.Println("threads handlers initialized")
-	return []denco.Handler{
-		(*router).POST("/api/thread/:slug_or_id/create",  threadCreate),
-		(*router).GET( "/api/thread/:slug_or_id/details", threadGetInfo),
-		(*router).POST("/api/thread/:slug_or_id/details", threadChangeInfo),
-		(*router).GET( "/api/thread/:slug_or_id/posts",   threadGetPosts),
-		(*router).POST("/api/thread/:slug_or_id/vote",    threadVote)}
+	(*router).POST("/api/thread/:slug_or_id/create",  threadCreate)
+	(*router).GET( "/api/thread/:slug_or_id/details", threadGetInfo)
+	(*router).POST("/api/thread/:slug_or_id/details", threadChangeInfo)
+	(*router).GET( "/api/thread/:slug_or_id/posts",   threadGetPosts)
+	(*router).POST("/api/thread/:slug_or_id/vote",    threadVote)
 }

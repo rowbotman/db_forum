@@ -3,13 +3,13 @@ package handlers
 import (
 	"../db"
 	"fmt"
+	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"github.com/naoina/denco"
 	"log"
 	"net/http"
 )
 
-func serviceDrop(w http.ResponseWriter, req *http.Request, _ denco.Params) {
+func serviceDrop(w http.ResponseWriter, req *http.Request, _ map[string]string) {
 	log.Println("service drop", req.RequestURI)
 	w.Header().Set("content-type", "text/plain")
 	if db.ClearService() {
@@ -19,7 +19,7 @@ func serviceDrop(w http.ResponseWriter, req *http.Request, _ denco.Params) {
 	_, _ = w.Write([]byte("error occurred"))
 }
 
-func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ denco.Params) {
+func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ map[string]string) {
 	log.Println("service get info", req.RequestURI)
 	w.Header().Set("content-type", "text/plain")
 	status, err := db.ServiceGet()
@@ -37,9 +37,8 @@ func serviceGetInfo(w http.ResponseWriter, req *http.Request, _ denco.Params) {
 	_, _ = w.Write(output)
 }
 
-func ServiceHandler(router **denco.Mux) []denco.Handler {
+func ServiceHandler(router **htmux.TreeMux) {
 	fmt.Println("services handlers initialized")
-	return []denco.Handler{
-		(*router).POST("/api/service/clear",  serviceDrop),
-		(*router).GET( "/api/service/status", serviceGetInfo)}
+	(*router).POST("/api/service/clear",  serviceDrop)
+	(*router).GET( "/api/service/status", serviceGetInfo)
 }
