@@ -277,7 +277,7 @@ func SelectThreadPosts(slugOrid string, limit int32, since int64,
 		} else {
 			sqlStatement += `ORDER BY p.path, p.created ASC`
 		}
-		//fmt.Println(sqlStatement, thread.Uid, since)
+		//////////fmt.Println(sqlStatement, thread.Uid, since)
 		if since > 0 {
 			sqlStatement += ` LIMIT $3;`
 			rows, err = DB.Query(sqlStatement, thread.Uid, since, limit)
@@ -285,7 +285,7 @@ func SelectThreadPosts(slugOrid string, limit int32, since int64,
 			sqlStatement += ` LIMIT $2;`
 			rows, err = DB.Query(sqlStatement, thread.Uid, limit)
 		}
-//		fmt.Println(sqlStatement, thread.Uid, since, limit)
+//		////////fmt.Println(sqlStatement, thread.Uid, since, limit)
 	}
 	case "parent_tree": {
 		strLimit := strconv.FormatInt(int64(limit), 10)
@@ -305,7 +305,7 @@ func SelectThreadPosts(slugOrid string, limit int32, since int64,
 		} else {
 			sqlStatement += `ORDER BY path[1] LIMIT ` + strLimit + `) ORDER BY p.path;`
 		}
-		//fmt.Println(sqlStatement, thread.Uid, since)
+		//////////fmt.Println(sqlStatement, thread.Uid, since)
 		if since > 0 {
 			rows, err = DB.Query(sqlStatement, thread.Uid, since)
 		} else {
@@ -353,7 +353,7 @@ func SelectThreadPosts(slugOrid string, limit int32, since int64,
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Println(posts)
+	//////////fmt.Println(posts)
 	////log.Println(posts)
 	output, err := json.Marshal(posts)
 	if err != nil {

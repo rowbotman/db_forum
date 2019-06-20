@@ -6,13 +6,12 @@ import (
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 func forumCreate(w http.ResponseWriter, req *http.Request, _ map[string]string) {
-	log.Println("forum create", req.RequestURI)
+	//log.Println("forum create", req.RequestURI)
 	var data models.DataForNewForum
 	_ = json.UnmarshalFromReader(req.Body, &data)
 	forum, err := db.InsertIntoForum(data, w)
@@ -33,7 +32,7 @@ func forumCreate(w http.ResponseWriter, req *http.Request, _ map[string]string) 
 }
 
 func forumGetInfo(w http.ResponseWriter,req *http.Request, ps map[string]string) {
-	log.Println("forum get info", req.RequestURI)
+	//log.Println("forum get info", req.RequestURI)
 	forumSlug := ps["slug"]
 	if len(forumSlug) <= 0 {
 		http.Error(w, "incorrect slug", http.StatusBadRequest)
@@ -58,7 +57,7 @@ func forumGetInfo(w http.ResponseWriter,req *http.Request, ps map[string]string)
 }
 
 func forumGetUsers(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("forum get users", req.RequestURI)
+	//log.Println("forum get users", req.RequestURI)
 	slugOrId := ps["slug"]
 	var err error
 	limit := int64(100)
@@ -89,7 +88,7 @@ func forumGetUsers(w http.ResponseWriter, req *http.Request, ps map[string]strin
 }
 
 func forumGetThreads(w http.ResponseWriter,req *http.Request, ps map[string]string) {
-	log.Println("forum get threads:", req.RequestURI)
+	//log.Println("forum get threads:", req.RequestURI)
 	slugOrId := ps["slug"]
 	var err error
 	limit := int64(100)
@@ -122,7 +121,7 @@ func forumGetThreads(w http.ResponseWriter,req *http.Request, ps map[string]stri
 }
 
 func forumCreateThread(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("forum create thread", req.RequestURI)
+	//log.Println("forum create thread", req.RequestURI)
 	slugOrId := ps["slug"]
 	data := models.ThreadInfo{}
 	err := json.UnmarshalFromReader(req.Body, &data)

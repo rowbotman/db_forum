@@ -3,7 +3,6 @@ package db
 import (
 	"../models"
 	"errors"
-	"fmt"
 	"github.com/jackc/pgx"
 	json "github.com/mailru/easyjson"
 	"net/http"
@@ -85,7 +84,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 
 		id := int64(0)
 		row = DB.QueryRow(sqlStatement1, slug)
-		fmt.Println(sqlStatement1, slug)
+		//fmt.Println(sqlStatement1, slug)
 		err := row.Scan(
 			&id,
 			&forum.Title,
@@ -96,7 +95,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 		}
 
 		row = DB.QueryRow(sqlStatement2, slug)
-		fmt.Println(sqlStatement1, slug)
+		//fmt.Println(sqlStatement1, slug)
 		err = row.Scan(
 			&id,
 			&forum.User,
@@ -106,7 +105,7 @@ LEFT JOIN profile p ON (p.uid = f.author_id) WHERE `
 			return models.Forum{}, err
 		}
 	}
-	fmt.Println("finish")
+	//fmt.Println("finish")
 	return forum, nil
 }
 

@@ -2,7 +2,6 @@ package db
 
 import (
 	"../models"
-	"fmt"
 )
 
 func ServiceGet() (models.ServiceInfo, error) {
@@ -35,7 +34,7 @@ func ServiceGet() (models.ServiceInfo, error) {
 	} else {
 		info.Post = *postsPtr
 	}
-	fmt.Println(info)
+	//fmt.Println(info)
 	return info, nil
 }
 

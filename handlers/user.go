@@ -6,12 +6,12 @@ import (
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"log"
+	//"log"
 	"net/http"
 )
 
 func userGet(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("user get", req.RequestURI)
+	//log.Println("user get", req.RequestURI)
 	nickname := ps["nickname"]
 	if len(nickname) <= 0 {
 		http.Error(w, "can't parse nickname", http.StatusBadRequest)
@@ -28,7 +28,7 @@ func userGet(w http.ResponseWriter, req *http.Request, ps map[string]string) {
 }
 
 func userCreate(w http.ResponseWriter,req *http.Request, ps map[string]string) {
-	log.Println("user create", req.RequestURI)
+	//log.Println("user create", req.RequestURI)
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)
 	if err != nil {
@@ -73,7 +73,7 @@ func userCreate(w http.ResponseWriter,req *http.Request, ps map[string]string) {
 }
 
 func userPost(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("user post", req.RequestURI)
+	//log.Println("user post", req.RequestURI)
 	nickname := ps["nickname"]
 	data := models.User{}
 	err := json.UnmarshalFromReader(req.Body, &data)

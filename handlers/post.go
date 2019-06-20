@@ -6,14 +6,14 @@ import (
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"
-	"log"
+	//"log"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
 func PostChangeInfo(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("post change info:", req.RequestURI)
+	//log.Println("post change info:", req.RequestURI)
 	var data models.DataForUpdPost
 	var err error
 	_ = json.UnmarshalFromReader(req.Body, &data)
@@ -49,7 +49,7 @@ func PostChangeInfo(w http.ResponseWriter, req *http.Request, ps map[string]stri
 }
 
 func PostGetInfo(w http.ResponseWriter, req *http.Request, ps map[string]string) {
-	log.Println("post get info:", req.RequestURI)
+	//log.Println("post get info:", req.RequestURI)
 	id := int64(0)
 	var err error
 	if postId := ps["id"]; len(postId) <= 0 {
