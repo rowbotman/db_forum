@@ -6,27 +6,34 @@ import (
 )
 
 func ServiceGet() (models.ServiceInfo, error) {
-	sqlStatement := `SELECT COUNT(*) FROM profile`
+	sqlStatement := `SELECT COUNT(*) FROM profile;`
 	row := DB.QueryRow(sqlStatement)
 	info := models.ServiceInfo{}
 	if err := row.Scan(&info.User); err != nil {
 		return models.ServiceInfo{}, err
 	}
-	sqlStatement = `SELECT COUNT(*) FROM forum`
+	sqlStatement = `SELECT COUNT(*) FROM forum;`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Forum); err != nil {
 		return models.ServiceInfo{}, err
 	}
-	sqlStatement = `SELECT COUNT(*) FROM thread`
+	sqlStatement = `SELECT COUNT(*) FROM thread;`
 	row = DB.QueryRow(sqlStatement)
 	if err := row.Scan(&info.Thread); err != nil {
 		return models.ServiceInfo{}, err
 	}
 	// todo: check it
-	sqlStatement = `SELECT SUM(post_count) FROM forum_meta`
+	var postsPtr *int64
+	sqlStatement = `SELECT SUM(post_count) FROM forum_meta;`
 	row = DB.QueryRow(sqlStatement)
-	if err := row.Scan(&info.Post); err != nil {
+	if err := row.Scan(&postsPtr); err != nil {
 		return models.ServiceInfo{}, err
+	}
+
+	if postsPtr == nil {
+		info.Post = 0
+	} else {
+		info.Post = *postsPtr
 	}
 	fmt.Println(info)
 	return info, nil
