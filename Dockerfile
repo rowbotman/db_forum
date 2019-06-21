@@ -57,7 +57,7 @@ RUN echo "local all all md5" > /etc/postgresql/$PGVERSION/main/pg_hba.conf &&\
     echo "full_page_writes = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "unix_socket_directories = '/var/run/postgresql'" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "max_wal_size = '1GB'" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "work_mem = 64MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
+    echo "work_mem = 32MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "maintenance_work_mem = 128MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "shared_buffers = 512MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "effective_cache_size = 256MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf
