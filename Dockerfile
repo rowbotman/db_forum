@@ -23,7 +23,7 @@ RUN apt-get -y install apt-transport-https git wget
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' >> /etc/apt/sources.list.d/pgdg.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 RUN apt-get -y update
-ENV PGVERSION 11
+ENV PGVERSION 10
 RUN apt-get -y install postgresql-$PGVERSION postgresql-contrib
 
 USER postgres
@@ -55,15 +55,13 @@ RUN echo "local all all md5" > /etc/postgresql/$PGVERSION/main/pg_hba.conf &&\
     echo "fsync = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "synchronous_commit = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "full_page_writes = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "autovacuum = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "unix_socket_directories = '/var/run/postgresql'" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "work_mem = 16MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "huge_pages = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "maintenance_work_mem = 256MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
+    echo "max_wal_size = '1GB'" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
+    echo "work_mem = 64MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
+    echo "maintenance_work_mem = 128MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
     echo "shared_buffers = 512MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "wal_buffers = 16MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "checkpoint_timeout = 15min" >>  /etc/postgresql/$PGVERSION/main/postgresql.conf &&\
-    echo "archive_mode = off" >> /etc/postgresql/$PGVERSION/main/postgresql.conf
+    echo "effective_cache_size = 256MB" >> /etc/postgresql/$PGVERSION/main/postgresql.conf
+
 VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 EXPOSE 5432
 EXPOSE 5000
