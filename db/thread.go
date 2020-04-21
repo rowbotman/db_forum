@@ -1,7 +1,7 @@
 package db
 
 import (
-	"../models"
+	"db-park/models"
 	"errors"
 	"github.com/jackc/pgx"
 	json "github.com/mailru/easyjson"

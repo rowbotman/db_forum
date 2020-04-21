@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"../db"
+	"db-park/db"
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./db"
-	"./handlers"
+	"db-park/db"
+	"db-park/handlers"
 	htmux "github.com/dimfeld/httptreemux"
 	"github.com/jackc/pgx"
 	"log"

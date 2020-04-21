@@ -1,7 +1,9 @@
-FROM golang:1.12-stretch AS lang
+FROM golang:1.13-stretch AS lang
+MAINTAINER Andrey Prokopenko
+
 WORKDIR /home/db_forum
 COPY . .
-RUN go get -d && go build -v
+RUN go build -o bin/db_forum ./main.go
 
 
 FROM ubuntu:18.04
@@ -23,7 +25,7 @@ RUN apt-get -y install apt-transport-https git wget
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' >> /etc/apt/sources.list.d/pgdg.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 RUN apt-get -y update
-ENV PGVERSION 10
+ENV PGVERSION 12
 RUN apt-get -y install postgresql-$PGVERSION postgresql-contrib
 
 USER postgres
@@ -69,4 +71,4 @@ EXPOSE 5000
 WORKDIR /home/db_forum
 COPY --from=lang /home/db_forum .
 
-CMD service postgresql start && ./db_forum
+CMD service postgresql start && ./bin/db_forum

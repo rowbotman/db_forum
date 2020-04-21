@@ -1,7 +1,7 @@
 package db
 
 import (
-	"../models"
+	"db-park/models"
 	"errors"
 	"github.com/jackc/pgx"
 	json "github.com/mailru/easyjson"
@@ -191,7 +191,7 @@ func SelectForumThreads(slug string, limit int32, since string,
 	forum := ""
 	err := row.Scan(&forum)
 	if err == pgx.ErrNoRows {
-		return models.Threads{{Uid : -1}}, errors.New("Can't find forum by slug: " + slug)
+		return models.Threads{{Uid: -1}}, errors.New("Can't find forum by slug: " + slug)
 	} else if err != nil {
 		return nil, err
 	}

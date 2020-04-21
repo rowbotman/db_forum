@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"../db"
-	"../models"
+	"db-park/db"
+	"db-park/models"
 	"fmt"
 	htmux "github.com/dimfeld/httptreemux"
 	json "github.com/mailru/easyjson"

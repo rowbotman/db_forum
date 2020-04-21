@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"../models"
+	"db-park/models"
 	"encoding/json"
 	htmux "github.com/dimfeld/httptreemux"
 	"net/http"

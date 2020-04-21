@@ -1,7 +1,7 @@
 package db
 
 import (
-	"../models"
+	"db-park/models"
 )
 
 func ServiceGet() (models.ServiceInfo, error) {
